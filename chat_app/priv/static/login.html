@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App - Inicio de Sesión</title>
+</head>
+
+<body>
+
+    <h3>Inicio de Sesión</h3>
+
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Nombre de usuario" required />
+        <input type="password" id="password" placeholder="Contraseña" required />
+        <button type="button" onclick="login()">Iniciar sesión</button>
+    </form>
+
+    <p>¿No tienes una cuenta?
+        <a href="/register">Registrarse</a>
+    </p>
+
+    <pre id="out">  </pre>
+
+    <script src="application.js"></script>
+
+</body>
+
+</html>

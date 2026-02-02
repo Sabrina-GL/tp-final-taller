@@ -1,9 +1,34 @@
 defmodule ChatWeb.PageHandler do
-  def init(req, _opts) do
+  @behaviour :cowboy_handler
+
+  def init(req, state) do
+    path = :cowboy_req.path(req)
+
+    case path do
+      # Redirige a página de registro
+      "/" ->
+        serve(req, state, "static/register.html")
+
+      "/register" ->
+        serve(req, state, "static/register.html")
+
+      "/login" ->
+        serve(req, state, "static/login.html")
+
+      "/index.html" ->
+        serve(req, state, "static/index.html")
+
+      _ ->
+        req = :cowboy_req.reply(404, %{}, "Not Found", req)
+        {:ok, req, state}
+    end
+  end
+
+  defp serve(req, state, file_path) do
     path =
       :chat_app
       |> :code.priv_dir()
-      |> Path.join("static/index.html")
+      |> Path.join(file_path)
 
     body = File.read!(path)
 
@@ -15,6 +40,6 @@ defmodule ChatWeb.PageHandler do
         req
       )
 
-    {:ok, req, nil}
+    {:ok, req, state}
   end
 end

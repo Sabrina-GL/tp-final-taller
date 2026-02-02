@@ -3,13 +3,13 @@ defmodule ChatApp.Application do
 
   @impl true
   def start(_type, _args) do
-    dispatcher =
+    dispatch =
       :cowboy_router.compile([
         {:_,
          [
            {"/", ChatWeb.PageHandler, []},
            {"/ws", ChatWeb.SocketHandler, []},
-           {"/static/[...]", :cowboy_static, {:priv_dir, :chat_app, "static"}}
+           {"/[...]", ChatWeb.PageHandler, []}
          ]}
       ])
 
@@ -17,7 +17,7 @@ defmodule ChatApp.Application do
       :cowboy.start_clear(
         :chat_app_http,
         [{:port, 4000}],
-        %{env: %{dispatch: dispatcher}}
+        %{env: %{dispatch: dispatch}}
       )
 
     children = [
