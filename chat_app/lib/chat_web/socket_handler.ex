@@ -10,8 +10,16 @@ defmodule SocketHandler do
   end
 
   def websocket_handle({:text, msg}, state) do
-    IO.inspect(msg, label: "Mensaje recibido")
-    {:reply, {:text, msg}, state}
+    data = Jason.decode!(msg)
+
+    reply =
+      case data["action"] do
+        "register" -> ChatApp.Accounts.register_user(data["username"], data["password"])
+        "login" -> ChatApp.Accounts.authenticate_user(data["username"], data["password"])
+        _ -> {:error, :unknown_action}
+      end
+
+    {:reply, {:text, Jason.encode!(reply)}, state}
   end
 
   def websocket_handle(_data, state) do

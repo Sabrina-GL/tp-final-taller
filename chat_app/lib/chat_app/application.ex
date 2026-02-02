@@ -7,7 +7,9 @@ defmodule ChatApp.Application do
       :cowboy_router.compile([
         {:_,
          [
-           {"/ws", SocketHandler, []}
+           {"/", ChatWeb.PageHandler, []},
+           {"/ws", ChatWeb.SocketHandler, []},
+           {"/static/[...]", :cowboy_static, {:priv_dir, :chat_app, "static"}}
          ]}
       ])
 
@@ -18,7 +20,13 @@ defmodule ChatApp.Application do
         %{env: %{dispatch: dispatcher}}
       )
 
-    children = []
+    children = [
+      {Registry, keys: :unique, name: ChatApp.UsersOnlineRegistry},
+      ChatApp.Accounts,
+      ChatApp.ChatManager,
+      ChatApp.ActivityTracker,
+      ChatApp.ChatRoomSupervisor
+    ]
 
     opts = [strategy: :one_for_one, name: ChatApp.Supervisor]
     Supervisor.start_link(children, opts)
