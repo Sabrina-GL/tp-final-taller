@@ -23,7 +23,28 @@
 
     <pre id="out">  </pre>
 
-    <script src="application.js"></script>
+    <!-- <script src="application.js"></script> -->
+    <script>
+        async function register() {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username.value,
+                    password: password.value
+                })
+            });
+
+            if (res.ok) {
+                window.location = "/index?user=" + username.value;
+            } else {
+                alert("Error al registrar el usuario");
+            }
+
+        }
+    </script>
 
 </body>
 
