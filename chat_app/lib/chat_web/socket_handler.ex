@@ -15,9 +15,6 @@ defmodule SocketHandler do
 
     reply =
       case data["action"] do
-        # "register" -> ChatApp.Accounts.register_user(data["username"], data["password"])
-        # "login" -> ChatApp.Accounts.authenticate_user(data["username"], data["password"])
-        # _ -> {:error, :unknown_action}
         "ping" -> %{ok: true}
         _ -> %{error: :unknown_action}
       end

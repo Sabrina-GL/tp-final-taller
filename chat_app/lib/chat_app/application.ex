@@ -3,23 +3,6 @@ defmodule ChatApp.Application do
 
   @impl true
   def start(_type, _args) do
-    # dispatch =
-    #   :cowboy_router.compile([
-    #     {:_,
-    #      [
-    #        {"/", ChatWeb.PageHandler, []},
-    #        {"/ws", ChatWeb.SocketHandler, []},
-    #        {"/[...]", ChatWeb.PageHandler, []}
-    #      ]}
-    #   ])
-
-    # {:ok, _} =
-    #   :cowboy.start_clear(
-    #     :chat_app_http,
-    #     [{:port, 4000}],
-    #     %{env: %{dispatch: dispatch}}
-    #   )
-
     children = [
       {Registry, keys: :unique, name: ChatApp.UsersOnlineRegistry},
       ChatApp.Accounts,
