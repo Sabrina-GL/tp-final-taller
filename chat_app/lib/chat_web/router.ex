@@ -61,7 +61,18 @@ defmodule ChatWeb.Router do
   end
 
   get "/ws" do
-    Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, [], %{}})
+    # Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, %{}, %{}})
+    user = conn.params["user"]
+
+    if user && user != "" do
+      Plug.Conn.upgrade_adapter(
+        conn,
+        :websocket,
+        {ChatWeb.SocketHandler, %{user: user}, %{}}
+      )
+    else
+      send_resp(conn, 400, "Missing user")
+    end
   end
 
   match _ do

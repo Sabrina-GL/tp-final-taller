@@ -1,6 +1,34 @@
 let ws = null;
 let currentUser = null;
 
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM cargado");
+
+    // Obtener usuario de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('user');
+
+    if (!username) {
+        window.location = "/login";
+        return;
+    }
+
+    console.log("Usuario:", username);
+
+    const addButton = document.getElementById('add-contact-btn');
+    if (addButton) {
+        addButton.addEventListener('click', function () {
+            if (typeof window.addContact === 'function') {
+                window.addContact();
+            } else {
+                alert("Función no disponible aún");
+            }
+        });
+    }
+
+    // Iniciar WebSocket
+    connectWebSocket(username);
+});
 
 function connectWebSocket(username) {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -22,24 +50,20 @@ function connectWebSocket(username) {
         console.log("Recibido:", e.data)
         const msg = JSON.parse(e.data);
 
-        // if (msg.contacts) {
-        //     const list = document.getElementById("contacts-list");
-        //     list.innerHTML = "";
-        //     msg.contacts.forEach(contact => {
-        //         const item = document.createElement("li");
-        //         item.textContent = contact;
-        //         list.appendChild(item);
-        //     });
-        // } else if (msg.error) {
+
+        if (msg.contacts) renderContacts(msg.contacts);
         if (msg.error) {
             alert(`Error: ${msg.error}`);
-        } else {
-            console.log("Received:", msg);
         }
     }
 
-    //ws.onerror
-    //ws.onclose
+    ws.onerror = function (e) {
+        console.log("Error WebSocket:", e)
+    }
+
+    ws.onclose = function (e) {
+        console.log("WebSocket cerrado:", e);
+    }
 }
 
 
@@ -52,9 +76,33 @@ function getContacts() {
 }
 
 function addContact() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("WebSocket no está conectado");
+        return;
+    }
+
+    const contact = document.getElementById("contact");
+    if (!contact.value) {
+        alert("Por favor ingrese un nombre de contacto");
+        return;
+    }
+
     ws.send(JSON.stringify({
         action: "add_contact",
         // username: username.value,
         contact: contact.value
     }));
 }
+
+function renderContacts(contacts) {
+    const list = document.getElementById("contacts-list");
+    list.innerHTML = "";
+
+    contacts.forEach(c => {
+        const ul = document.createElement("ul");
+        ul.textContent = c;
+        list.appendChild(ul);
+    });
+}
+
+
