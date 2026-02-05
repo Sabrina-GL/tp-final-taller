@@ -1,6 +1,12 @@
 defmodule ChatWeb.Router do
   use Plug.Router
 
+  plug(Plug.Static,
+    at: "/static",
+    from: :chat_app,
+    gzip: false
+  )
+
   plug(Plug.Logger)
   plug(:match)
 
@@ -54,8 +60,8 @@ defmodule ChatWeb.Router do
     end
   end
 
-  match "/ws" do
-    Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, []})
+  get "/ws" do
+    Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, [], %{}})
   end
 
   match _ do

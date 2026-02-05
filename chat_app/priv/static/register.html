@@ -26,25 +26,34 @@
     <!-- <script src="application.js"></script> -->
     <script>
         async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+
             const res = await fetch('/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    username: username.value,
-                    password: password.value
+                    username: username,
+                    password: password
                 })
             });
 
             if (res.ok) {
-                window.location = "/index?user=" + username.value;
+                window.location = "/index?user=" + username;
             } else {
                 alert("Error al registrar el usuario");
             }
 
         }
     </script>
+
 
 </body>
 

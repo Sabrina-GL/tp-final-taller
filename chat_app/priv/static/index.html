@@ -11,11 +11,24 @@
 
     <h3>Bienvenid@!</h3>
 
+    <h3>Mis Contactos</h3>
 
+    <ul id="contacts-list"></ul>
+    <input type="text" id="contact" placeholder="Nuevo contacto">
+    <button onclick="addContact()">Agregar Contacto</button>
 
-    <pre id="out">  </pre>
+    <script src="/static/application.js"></script>
+    <script>
+        // Obtener usuario de la URL y conecto 
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('user');
 
-    <script src="application.js"></script>
+        if (username) {
+            connectWebSocket(username);
+        } else {
+            window.location = "/login";
+        }
+    </script>
 
 </body>
 

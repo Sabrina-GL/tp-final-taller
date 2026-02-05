@@ -1,4 +1,4 @@
-defmodule SocketHandler do
+defmodule ChatWeb.SocketHandler do
   @behaviour :cowboy_websocket
   def init(request, _state) do
     %{user: user} = :cowboy_req.match_qs([{:user, [], nil}], request)
@@ -15,8 +15,24 @@ defmodule SocketHandler do
 
     reply =
       case data["action"] do
-        "ping" -> %{ok: true}
-        _ -> %{error: :unknown_action}
+        # "register" ->
+        #   ChatApp.Accounts.register_user(data["username"], data["password"])
+
+        # "login" ->
+        #   ChatApp.Accounts.authenticate_user(data["username"], data["password"])
+
+        "get_contacts" ->
+          contacts = ChatApp.Accounts.get_contacts(state.user)
+          %{contacts: contacts}
+
+        "add_contact" ->
+          case ChatApp.Accounts.add_contact(state.user, data["contact"]) do
+            :ok -> %{status: :contact_added}
+            {:error, reason} -> %{error: reason}
+          end
+
+        _ ->
+          %{error: :unknown_action}
       end
 
     {:reply, {:text, Jason.encode!(reply)}, state}

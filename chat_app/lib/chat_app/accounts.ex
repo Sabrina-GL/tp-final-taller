@@ -18,6 +18,16 @@ defmodule ChatApp.Accounts do
     GenServer.call(__MODULE__, {:authenticate_user, username, password})
   end
 
+  def get_contacts(username) do
+    GenServer.call(__MODULE__, {:get_contacts, username})
+  end
+
+  def add_contact(username, contact) do
+    GenServer.call(__MODULE__, {:add_contact, username, contact})
+  end
+
+  # SERVER
+
   def handle_call({:register_user, username, password}, _from, table) do
     case :ets.lookup(table, username) do
       [] ->
@@ -43,6 +53,37 @@ defmodule ChatApp.Accounts do
 
       _ ->
         {:reply, {:error, :invalid_credentials}, table}
+    end
+  end
+
+  def handle_call({:get_contacts, username}, _from, table) do
+    case :ets.lookup(table, username) do
+      [{^username, user}] ->
+        {:reply, {:ok, MapSet.to_list(user.contacts)}, table}
+
+      _ ->
+        {:reply, {:error, :user_not_found}, table}
+    end
+  end
+
+  def handle_call({:add_contact, username, contact}, _from, table) do
+    cond do
+      username == contact ->
+        {:reply, {:error, :cannot_add_self}, table}
+
+      :ets.lookup(table, contact) == [] ->
+        {:reply, {:error, :contact_not_found}, table}
+
+      true ->
+        case :ets.lookup(table, username) do
+          [{^username, user}] ->
+            updated_user = %{user | contacts: MapSet.put(user.contacts, contact)}
+            :ets.insert(table, {username, updated_user})
+            {:reply, :ok, table}
+
+          _ ->
+            {:reply, {:error, :user_not_found}, table}
+        end
     end
   end
 end
