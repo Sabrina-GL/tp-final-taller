@@ -22,12 +22,24 @@ defmodule ChatApp.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Web framework & WebSocket
       {:cowboy, "~> 2.9"},
       {:plug_cowboy, "~> 2.6"},
       {:plug, "~> 1.14"},
-      {:jason, "~> 1.4"}
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+
+      # JSON encoding/decoding
+      {:jason, "~> 1.4"},
+
+      # Database
+      {:ecto, "~> 3.10"},
+      {:ecto_sqlite3, "~> 0.9"},
+
+      # Hashing passwords
+      {:bcrypt_elixir, "~> 3.0"},
+
+      # Development tools
+      {:ex_doc, "~> 0.30", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 end

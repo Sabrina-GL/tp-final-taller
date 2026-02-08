@@ -24,3 +24,26 @@ chat_app-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+
+# Database files
+*.db
+*.sqlite3
+
+# Release builds
+_release/
+
+# Dialyzer
+.dialyzer_plt
+dialyzer.ignore-warnings

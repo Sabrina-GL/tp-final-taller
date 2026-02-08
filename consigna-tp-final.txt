@@ -1,0 +1,42 @@
+Trabajo Práctico Final – Taller de Programación I
+Cátedra: Manuel Camejo
+Objetivo
+Desarrollar un sistema de chat cliente‑servidor usando Elixir + OTP, con servidor WebSocket
+basado en Cowboy. El foco está en el servidor; el cliente mínimo puede implementarse por
+consola en cualquier lenguaje.
+Alcance
+●​ Estructura de procesos con Elixir OTP.​
+●​ Uso de WebSocket con Cowboy para la comunicación cliente‑servidor.​
+●​ Cliente por consola (en el lenguaje que prefieran) que permita:interactuar con todas
+las features de la aplicación.
+Features
+●​ Alta de usuarios: registro con nombre de usuario único + contraseña.​
+●​ Estado de conexión: el sistema registra si el usuario está “activo” o “inactivo”, y
+desde hace cuánto.​
+●​ Lista de contactos para cada usuario.​
+●​ Chats individuales (1‑a‑1) y chats grupales (más de 2 participantes).​
+●​ Mantener los últimos 10 mensajes en cada conversación (privada o grupal).​
+●​ Búsqueda de mensajes por palabra clave dentro de una conversación.​
+●​ Lista de notificaciones de mensajes: cuando un usuario está inactivo y le llegan
+mensajes, al reactivarse debe ver los nuevos mensajes pendientes.​
+●​ Documentación mínima: README con instrucciones de cómo levantar, probar e
+interactuar con el sistema.​Features opcionales
+●​ Envío de imágenes o archivos.​
+●​ Front‑end sencillo en HTML/CSS que se conecta vía WebSocket al backend.​
+●​ Bloquear contactos: un usuario puede bloquear a otro para que no se pueda
+interactuar entre ellos.​
+●​ Borrar mensajes: permitir que un usuario elimine uno o varios mensajes de una
+conversación.​
+●​ Backups de mensajes
+Criterios de evaluación
+●​ Correcto uso de OTP ​
+●​ Correcto funcionamiento de cada feature​
+●​ Código limpio, modular, uso de buenas prácticas, pruebas básicas (unitarias o de
+integración).​
+●​ Documentación: README claro, instrucciones para levantar el sistema, cómo
+probar, cómo interactuar.
+Entrega
+●​ Fecha de entrega: una de las 5 fechas de final, con una reentrega.​
+●​ Repositorio privado en GitHub con todo el código, tests, documentación.​
+●​ Demostración de funcionalidad: durante la clase de entrega deberá hacerse una
+demo en vivo con todos los miembros del grupo.

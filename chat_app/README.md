@@ -1,29 +1,162 @@
-# ChatApp
+# ChatApp - Backend de Chat en Elixir
 
-**TODO: Add description**
+## Descripcion
 
-## Installation
+Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowboy) para comunicacion bidireccional.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `chat_app` to your list of dependencies in `mix.exs`:
+## Requisitos
 
-```elixir
-def deps do
-  [
-    {:chat_app, "~> 0.1.0"}
-  ]
-end
+- Elixir >= 1.17
+- Erlang/OTP >= 25
+- Mix (incluido con Elixir)
+- SQLite3 (opcional, si se habilita persistencia)
+
+## Inicio rapido
+
+```bash
+mix deps.get
+mix compile
+
+# Opcion 1: Consola interactiva
+iex -S mix
+
+# Opcion 2: En background (sin consola)
+mix run --no-halt
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/chat_app>.
+Servidor disponible en:
+- HTTP: http://localhost:4000
+- WebSocket: ws://localhost:4000/ws?user=username
 
-## Para levantar
+## API REST
 
+### Registro
+```
+POST /api/register
+Body: {"username": "user", "password": "pass"}
+```
+
+### Login
+```
+POST /api/login
+Body: {"username": "user", "password": "pass"}
+```
+
+## WebSocket API
+
+Conectar:
+```
+ws://localhost:4000/ws?user=username
+```
+
+Mensajes soportados:
+```json
+{
+  "type": "message",
+  "chat_id": "chat_123",
+  "content": "Hola!"
+}
+```
+
+## Consola interactiva (IEx)
+
+```elixir
+# Registrar usuario
+ChatApp.Accounts.register_user("alice", "pass123")
+ChatApp.Accounts.register_user("bob", "pass456")
+
+# Crear chat privado
+{:ok, chat_id} = ChatApp.ChatManager.create_direct_chat("alice", "bob")
+
+# Enviar mensaje
+ChatApp.ChatManager.send_message(chat_id, "alice", "Hola Bob!")
+
+# Obtener mensajes
+ChatApp.ChatManager.get_messages(chat_id, 10)
+
+# Buscar mensajes
+ChatApp.ChatManager.search_messages(chat_id, "Hola")
+
+# Ver usuarios online
+ChatApp.ActivityTracker.get_online_users()
+```
+
+## Modulos principales
+
+- `ChatApp.Application` - Punto de entrada OTP y supervision
+- `ChatApp.Accounts` - Registro y autenticacion de usuarios
+- `ChatApp.ChatManager` - Gestor central de conversaciones
+- `ChatApp.ChatRoom` - Logica de salas y mensajes
+- `ChatApp.ActivityTracker` - Estado activo/inactivo
+- `ChatApp.ChatRoomSupervisor` - Supervisor dinamico de salas
+- `ChatWeb.Router` - Rutas HTTP y upgrade a WebSocket
+- `ChatWeb.SocketHandler` - Manejo de conexiones WebSocket
+
+## Archivos estaticos
+
+Ubicacion: `priv/static/`
+- `index.html` - Pagina principal
+- `login.html` - Login
+- `register.html` - Registro
+- `application.js` - Cliente web
+
+## Configuracion
+
+### Puerto del servidor
+Edita `lib/chat_app/application.ex`:
+```elixir
+Plug.Cowboy.child_spec(
+  scheme: :http,
+  plug: ChatWeb.Router,
+  options: [port: 4000]
+)
+```
+
+### Base de datos
+Configurar en `config/config.exs` (si se usa persistencia):
+```elixir
+config :chat_app, ChatApp.Repo,
+  database: "chat_app.db",
+  pool_size: 10
+```
+
+## Desarrollo y testing
+
+```bash
+mix test
+mix test --trace
+mix test test/chat_app_test.exs
+
+mix format
+mix compile --warnings-as-errors
+mix dialyzer
+```
+
+## Troubleshooting
+
+### Port already in use
+```bash
+lsof -i :4000
+kill -9 <PID>
+```
+
+### Errores de compilacion
+```bash
+mix clean
 mix deps.get
+mix compile
+```
 
-## Para correr
+### Base de datos corrupta
+```bash
+rm -f chat_app.db
+mix compile
+```
 
-iex -S mix
+## Enlaces utiles
+
+- [README principal](../README.md)
+- [ARQUITECTURA.md](../ARQUITECTURA.md)
+- [DESARROLLO.md](../DESARROLLO.md)
+- [PROXIMOS_PASOS.md](../PROXIMOS_PASOS.md)
 

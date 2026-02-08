@@ -1,27 +1,10 @@
 defmodule ChatWeb.SocketHandler do
   @behaviour :cowboy_websocket
 
-  # def init(request, _state) do
-  #   qs = :cowboy_req.parse_qs(request)
-
-  #   user =
-  #     case List.keyfind(qs, "user", 0) do
-  #       {"user", username} when is_binary(username) and username != "" ->
-  #         username
-
-  #       _ ->
-  #         nil
-  #     end
-
-  #   if user do
-  #     IO.puts("WebSocket iniciando para usuario: #{user}")
-  #     {:cowboy_websocket, request, %{user: user}}
-  #   else
-  #     # No hay usuario, rechazo conexión
-  #     IO.puts("WebSocket rechazado: sin parámetro 'user'")
-  #     {:shutdown, request}
-  #   end
-  # end
+  # Callback requerido por cowboy_websocket
+  def init(request, state) do
+    {:cowboy_websocket, request, state}
+  end
 
   def websocket_init(state) do
     IO.puts("Cliente conectado: #{state.user}")
