@@ -26,6 +26,14 @@ defmodule ChatApp.Accounts do
     GenServer.call(__MODULE__, {:add_contact, username, contact})
   end
 
+  def get_chatrooms(username) do
+    GenServer.call(__MODULE__, {:get_chatrooms, username})
+  end
+
+  def add_chatroom(username, chatroom_id) do
+    GenServer.call(__MODULE__, {:add_chatroom, username, chatroom_id})
+  end
+
   # SERVER
 
   def handle_call({:register_user, username, password}, _from, table) do
@@ -84,6 +92,28 @@ defmodule ChatApp.Accounts do
           _ ->
             {:reply, {:error, :user_not_found}, table}
         end
+    end
+  end
+
+  def handle_call({:get_chatrooms, username}, _from, table) do
+    case :ets.lookup(table, username) do
+      [{^username, user}] ->
+        {:reply, {:ok, MapSet.to_list(user.chat_rooms)}, table}
+
+      _ ->
+        {:reply, {:error, :user_not_found}, table}
+    end
+  end
+
+  def handle_call({:add_chatroom, username, chatroom_id}, _from, table) do
+    case :ets.lookup(table, username) do
+      [{^username, user}] ->
+        updated_user = %{user | chat_rooms: MapSet.put(user.chat_rooms, chatroom_id)}
+        :ets.insert(table, {username, updated_user})
+        {:reply, :ok, table}
+
+      _ ->
+        {:reply, {:error, :user_not_found}, table}
     end
   end
 end

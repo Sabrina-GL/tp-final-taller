@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
         addButton.addEventListener('click', function () {
             if (typeof window.addContact === 'function') {
                 window.addContact();
+
             } else {
                 alert("Función no disponible aún");
             }
@@ -52,6 +53,8 @@ function connectWebSocket(username) {
 
 
         if (msg.contacts) renderContacts(msg.contacts);
+        if (msg.chatrooms) renderChatRooms(msg.chatrooms);
+        if (msg.chat_opened) openChatRoom(msg.chat_id);
         if (msg.error) {
             alert(`Error: ${msg.error}`);
         }
@@ -101,6 +104,30 @@ function renderContacts(contacts) {
     contacts.forEach(c => {
         const ul = document.createElement("ul");
         ul.textContent = c;
+        list.appendChild(ul);
+    });
+}
+
+function openChatRoom(chat_id) {
+    console.log("Abriendo chat room:", chat_id)
+
+    document.getElementById("chat-container").style.display = "block";
+    document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
+    document.getElementById("chat-messages").innerHTML = "";
+
+    //cargar mensajes
+}
+
+function renderChatRooms(chatrooms) {
+    const list = document.getElementById("chatrooms-list");
+    list.innerHTML = "";
+
+    chatrooms.forEach(c => {
+        const ul = document.createElement("ul");
+        ul.textContent = c;
+        ul.addEventListener('click', function () {
+            openChatRoom(c);
+        });
         list.appendChild(ul);
     });
 }

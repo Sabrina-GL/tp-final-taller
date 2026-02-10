@@ -11,12 +11,26 @@
 
     <h3>Bienvenid@!</h3>
 
-    <h3>Mis Contactos</h3>
+    <div id="contacts-container">
+        <h3>Mis Contactos</h3>
 
-    <ul id="contacts-list"></ul>
-    <input type="text" id="contact" placeholder="Nuevo contacto">
-    <button id="add-contact-btn">Agregar Contacto</button>
+        <ul id="contacts-list"></ul>
+        <input type="text" id="contact" placeholder="Nuevo contacto">
+        <button id="add-contact-btn">Agregar Contacto</button>
+    </div>
 
+    <div id="chatrooms-container">
+        <h3>Mis Chats</h3>
+        <ul id="chatrooms-list"></ul>
+    </div>
+
+    <div id="chat-container">
+        <h3 id="chat-title">Chat</h3>
+        <div id="chat-messages" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 10px;">
+        </div>
+        <input type="text" id="chat-input" placeholder="Escribí un mensaje...">
+        <button id="send-btn">Enviar</button>
+    </div>
 
     <script src="/static/application.js"></script>
 

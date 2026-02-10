@@ -29,14 +29,23 @@ defmodule ChatWeb.SocketHandler do
           end
 
         "add_contact" ->
-          case ChatApp.Accounts.add_contact(state.user, data["contact"]) do
-            :ok ->
-              # %{status: :contact_added}
-              {:ok, contacts} = ChatApp.Accounts.get_contacts(state.user)
-              %{contacts: contacts}
-
-            {:error, reason} ->
-              %{error: reason}
+          with :ok <- ChatApp.Accounts.add_contact(state.user, data["contact"]),
+               {:ok, contacts} <- ChatApp.Accounts.get_contacts(state.user),
+               {:ok, chat_id} <-
+                 ChatApp.ChatManager.get_or_create_private_chat(state.user, data["contact"]),
+               :ok <- ChatApp.Accounts.add_chatroom(state.user, chat_id),
+               :ok <-
+                 ChatApp.Accounts.add_chatroom(data["contact"], chat_id),
+               {:ok, chatrooms} <- ChatApp.Accounts.get_chatrooms(state.user) do
+            %{
+              status: :contact_added,
+              contacts: contacts,
+              chatrooms: chatrooms,
+              chat_opened: true,
+              chat_id: "#{Enum.sort([state.user, data["contact"]]) |> Enum.join(":")}"
+            }
+          else
+            {:error, reason} -> %{error: reason}
           end
 
         _ ->
@@ -56,5 +65,15 @@ defmodule ChatWeb.SocketHandler do
 
   def terminate(_reason, _request, _state) do
     :ok
+  end
+
+  defp open_chat_room(user1, user2) do
+    chat_id = "#{Enum.sort([user1, user2]) |> Enum.join(":")}"
+
+    with {:ok, _chat_pid} <- ChatApp.ChatManager.get_or_create_private_chat(user1, user2) do
+      %{status: :chat_opened, chat_id: chat_id, type: :private}
+    else
+      {:error, reason} -> %{error: reason}
+    end
   end
 end
