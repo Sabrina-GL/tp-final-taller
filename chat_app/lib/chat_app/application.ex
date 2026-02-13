@@ -4,7 +4,7 @@ defmodule ChatApp.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Registry, keys: :unique, name: ChatApp.UsersOnlineRegistry},
+      {Registry, keys: :unique, name: ChatApp.UsersRegistry},
       {Registry, keys: :unique, name: ChatApp.ChatRoomsRegistry},
       ChatApp.Accounts,
       ChatApp.ChatManager,

@@ -8,6 +8,7 @@ defmodule ChatWeb.SocketHandler do
 
   def websocket_init(state) do
     IO.puts("Cliente conectado: #{state.user}")
+    Registry.register(ChatApp.UsersRegistry, state.user, self())
     {:ok, state}
   end
 
@@ -68,6 +69,11 @@ defmodule ChatWeb.SocketHandler do
 
   def websocket_handle(_data, state) do
     {:ok, state}
+  end
+
+  def websocket_info({:new_chatroom, chat_id}, state) do
+    payload = Jason.encode!(%{type: :new_chatroom, chat_id: chat_id})
+    {:reply, {:text, payload}, state}
   end
 
   def websocket_info(_info, state) do

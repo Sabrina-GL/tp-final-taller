@@ -64,6 +64,7 @@ function connectWebSocket(username) {
         if (msg.chatrooms) renderChatRooms(msg.chatrooms);
         if (msg.status == "chat_opened") openChatRoom(msg.chat_id);
         if (msg.status == "new_message") renderMessage(msg.msg_content);
+        if (msg.type == "new_chatroom") addChatRoomToList(msg.chat_id);
         if (msg.error) {
             alert(`Error: ${msg.error}`);
         }
@@ -140,17 +141,21 @@ function openChatRoom(chat_id) {
 }
 
 function renderChatRooms(chatrooms) {
+    chatrooms.forEach(c => {
+        addChatRoomToList(c);
+    });
+}
+
+function addChatRoomToList(chat_id) {
     const list = document.getElementById("chatrooms-list");
     list.innerHTML = "";
 
-    chatrooms.forEach(c => {
-        const ul = document.createElement("ul");
-        ul.textContent = c;
-        ul.addEventListener('click', function () {
-            openChatRoom(c);
-        });
-        list.appendChild(ul);
+    const ul = document.createElement("ul");
+    ul.textContent = chat_id;
+    ul.addEventListener('click', function () {
+        openChatRoom(chat_id);
     });
+    list.appendChild(ul);
 }
 
 function renderMessage(message) {
