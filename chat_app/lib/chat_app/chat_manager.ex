@@ -34,7 +34,7 @@ defmodule ChatApp.ChatManager do
       [] ->
         case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_2) do
           [] ->
-            {:ok, pid} =
+            {:ok, _pid} =
               DynamicSupervisor.start_child(ChatApp.ChatRoomSupervisor, %{
                 id: ChatApp.ChatRoom,
                 start:
@@ -48,6 +48,9 @@ defmodule ChatApp.ChatManager do
                      }
                    ]}
               })
+
+            ChatApp.Accounts.add_chatroom(user1, chat_id_1)
+            ChatApp.Accounts.add_chatroom(user2, chat_id_1)
 
             {:reply, {:ok, chat_id_1}, state}
 

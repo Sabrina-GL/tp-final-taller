@@ -7,16 +7,16 @@ defmodule ChatApp.ChatRoom do
     GenServer.start_link(__MODULE__, state, name: via_tuple(state.chat_id))
   end
 
-  def add_message(pid, from, text) do
-    GenServer.cast(pid, {:add_message, from, text})
+  def add_message(chat_id, from, text) do
+    GenServer.call(via_tuple(chat_id), {:add_message, from, text})
   end
 
   defp via_tuple(chat_id) do
     {:via, Registry, {ChatApp.ChatRoomsRegistry, chat_id}}
   end
 
-  def search_messages(pid, keyword) do
-    GenServer.call(pid, {:search_messages, keyword})
+  def search_messages(chat_id, keyword) do
+    GenServer.call(via_tuple(chat_id), {:search_messages, keyword})
   end
 
   # SERVER
@@ -25,10 +25,10 @@ defmodule ChatApp.ChatRoom do
     {:ok, state}
   end
 
-  def handle_cast({:add_message, from, text}, state) do
+  def handle_call({:add_message, from, text}, _from, state) do
     message = %{
       from: from,
-      text: text,
+      msg_content: text,
       timestamp: DateTime.utc_now()
     }
 
@@ -37,7 +37,7 @@ defmodule ChatApp.ChatRoom do
       |> Enum.take(10)
 
     new_state = %{state | messages: messages}
-    {:noreply, new_state}
+    {:reply, message, new_state}
   end
 
   def handle_call({:search_messages, keyword}, _from, state) do
@@ -45,7 +45,7 @@ defmodule ChatApp.ChatRoom do
       state.messages
       |> Enum.filter(fn msg ->
         String.contains?(
-          String.downcase(msg.text),
+          String.downcase(msg.msg_content),
           String.downcase(keyword)
         )
       end)

@@ -28,14 +28,20 @@ defmodule ChatWeb.SocketHandler do
             {:error, reason} -> %{error: reason}
           end
 
+        "get_chatrooms" ->
+          case ChatApp.Accounts.get_chatrooms(state.user) do
+            {:ok, chatrooms} -> %{chatrooms: chatrooms}
+            {:error, reason} -> %{error: reason}
+          end
+
         "add_contact" ->
           with :ok <- ChatApp.Accounts.add_contact(state.user, data["contact"]),
                {:ok, contacts} <- ChatApp.Accounts.get_contacts(state.user),
-               {:ok, chat_id} <-
+               {:ok, _chat_id} <-
                  ChatApp.ChatManager.get_or_create_private_chat(state.user, data["contact"]),
-               :ok <- ChatApp.Accounts.add_chatroom(state.user, chat_id),
-               :ok <-
-                 ChatApp.Accounts.add_chatroom(data["contact"], chat_id),
+               #  :ok <- ChatApp.Accounts.add_chatroom(state.user, chat_id),
+               #  :ok <-
+               #    ChatApp.Accounts.add_chatroom(data["contact"], chat_id),
                {:ok, chatrooms} <- ChatApp.Accounts.get_chatrooms(state.user) do
             %{
               status: :contact_added,
@@ -47,6 +53,11 @@ defmodule ChatWeb.SocketHandler do
           else
             {:error, reason} -> %{error: reason}
           end
+
+        "send_message" ->
+          message = ChatApp.ChatRoom.add_message(data["chat_id"], state.user, data["msg_content"])
+
+          %{status: :new_message, chat_id: data["chat_id"], msg_content: message}
 
         _ ->
           %{error: :unknown_action}
