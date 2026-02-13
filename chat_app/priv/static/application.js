@@ -62,8 +62,13 @@ function connectWebSocket(username) {
 
         if (msg.contacts) renderContacts(msg.contacts);
         if (msg.chatrooms) renderChatRooms(msg.chatrooms);
+        if (msg.messages) renderChatRoomMessages(msg.messages);
         if (msg.status == "chat_opened") openChatRoom(msg.chat_id);
-        if (msg.status == "new_message") renderMessage(msg.msg_content);
+        if (msg.status == "new_message") {
+            if (currentChatRoom === msg.chat_id) {
+                renderMessage(msg.message);
+            }
+        }
         if (msg.type == "new_chatroom") addChatRoomToList(msg.chat_id);
         if (msg.error) {
             alert(`Error: ${msg.error}`);
@@ -137,10 +142,13 @@ function openChatRoom(chat_id) {
     document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
     document.getElementById("chat-messages").innerHTML = "";
 
-    //cargar mensajes
+    getChatRoomMessages(chat_id);
 }
 
 function renderChatRooms(chatrooms) {
+    const list = document.getElementById("chatrooms-list");
+    list.innerHTML = "";
+
     chatrooms.forEach(c => {
         addChatRoomToList(c);
     });
@@ -148,7 +156,7 @@ function renderChatRooms(chatrooms) {
 
 function addChatRoomToList(chat_id) {
     const list = document.getElementById("chatrooms-list");
-    list.innerHTML = "";
+    // list.innerHTML = "";
 
     const ul = document.createElement("ul");
     ul.textContent = chat_id;
@@ -158,12 +166,27 @@ function addChatRoomToList(chat_id) {
     list.appendChild(ul);
 }
 
+function getChatRoomMessages(chat_id) {
+    ws.send(JSON.stringify({
+        action: "get_messages",
+        chat_id: chat_id
+    }));
+}
+
+function renderChatRoomMessages(messages) {
+    const messagesContainer = document.getElementById("chat-messages");
+    messagesContainer.innerHTML = "";
+
+    messages.slice().reverse().forEach(msg => {
+        renderMessage(msg);
+    });
+}
+
 function renderMessage(message) {
     const messagesContainer = document.getElementById("chat-messages");
     const msgDiv = document.createElement("div");
     msgDiv.textContent = `${message.from}: ${message.msg_content}`;
     messagesContainer.appendChild(msgDiv);
-    //messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 function sendMessage() {

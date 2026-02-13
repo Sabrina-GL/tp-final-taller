@@ -8,4 +8,14 @@ defmodule ChatApp.Notifications do
         :offline
     end
   end
+
+  def notify_new_message(user, chat_id, message) do
+    case Registry.lookup(ChatApp.UsersRegistry, user) do
+      [{pid, _}] ->
+        send(pid, {:new_message, chat_id, message})
+
+      [] ->
+        :offline
+    end
+  end
 end

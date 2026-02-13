@@ -35,6 +35,10 @@ defmodule ChatWeb.SocketHandler do
             {:error, reason} -> %{error: reason}
           end
 
+        "get_messages" ->
+          {:ok, messages} = ChatApp.ChatRoom.get_messages(data["chat_id"])
+          %{messages: messages}
+
         "add_contact" ->
           with :ok <- ChatApp.Accounts.add_contact(state.user, data["contact"]),
                {:ok, contacts} <- ChatApp.Accounts.get_contacts(state.user),
@@ -58,7 +62,7 @@ defmodule ChatWeb.SocketHandler do
         "send_message" ->
           message = ChatApp.ChatRoom.add_message(data["chat_id"], state.user, data["msg_content"])
 
-          %{status: :new_message, chat_id: data["chat_id"], msg_content: message}
+          %{status: :ok, message: message}
 
         _ ->
           %{error: :unknown_action}
@@ -72,8 +76,13 @@ defmodule ChatWeb.SocketHandler do
   end
 
   def websocket_info({:new_chatroom, chat_id}, state) do
-    payload = Jason.encode!(%{type: :new_chatroom, chat_id: chat_id})
-    {:reply, {:text, payload}, state}
+    reply = Jason.encode!(%{type: :new_chatroom, chat_id: chat_id})
+    {:reply, {:text, reply}, state}
+  end
+
+  def websocket_info({:new_message, chat_id, message}, state) do
+    reply = Jason.encode!(%{status: :new_message, chat_id: chat_id, message: message})
+    {:reply, {:text, reply}, state}
   end
 
   def websocket_info(_info, state) do
