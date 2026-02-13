@@ -4,11 +4,15 @@ defmodule ChatApp.ChatRoom do
   # CLIENT API
 
   def start_link(state) do
-    GenServer.start_link(__MODULE__, state)
+    GenServer.start_link(__MODULE__, state, name: via_tuple(state.chat_id))
   end
 
   def add_message(pid, from, text) do
     GenServer.cast(pid, {:add_message, from, text})
+  end
+
+  defp via_tuple(chat_id) do
+    {:via, Registry, {ChatApp.ChatRoomsRegistry, chat_id}}
   end
 
   def search_messages(pid, keyword) do

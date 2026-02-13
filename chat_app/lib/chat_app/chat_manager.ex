@@ -8,8 +8,6 @@ defmodule ChatApp.ChatManager do
   end
 
   def get_or_create_private_chat(user1, user2) do
-    participants = [user1, user2]
-    chat_id = "private:#{Enum.sort(participants) |> Enum.join(":")}"
     GenServer.call(__MODULE__, {:get_or_create_private_chat, user1, user2})
   end
 
@@ -32,10 +30,10 @@ defmodule ChatApp.ChatManager do
     chat_id_2 = "#{Enum.sort([user2, user1]) |> Enum.join(":")}"
     participants = [user1, user2]
 
-    case Map.get(state, chat_id_1) do
-      nil ->
-        case Map.get(state, chat_id_2) do
-          nil ->
+    case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_1) do
+      [] ->
+        case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_2) do
+          [] ->
             {:ok, pid} =
               DynamicSupervisor.start_child(ChatApp.ChatRoomSupervisor, %{
                 id: ChatApp.ChatRoom,
@@ -51,21 +49,13 @@ defmodule ChatApp.ChatManager do
                    ]}
               })
 
-            # ChatApp.ChatRoom.start_link(%{
-            #   chat_id: chat_id_1,
-            #   type: :private,
-            #   participants: participants,
-            #   messages: []
-            # })
+            {:reply, {:ok, chat_id_1}, state}
 
-            new_state = Map.put(state, chat_id_1, pid)
-            {:reply, {:ok, chat_id_1}, new_state}
-
-          pid ->
+          [{_pid, _}] ->
             {:reply, {:ok, chat_id_2}, state}
         end
 
-      pid ->
+      [{_pid, _}] ->
         {:reply, {:ok, chat_id_1}, state}
     end
   end
