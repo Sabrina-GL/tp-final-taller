@@ -19,8 +19,8 @@ defmodule ChatApp.ChatRoom do
     GenServer.call(via_tuple(chat_id), {:get_messages})
   end
 
-  def search_messages(pid, keyword) do
-    GenServer.call(pid, {:search_messages, keyword})
+  def search_messages(chat_id, keyword) do
+    GenServer.call(via_tuple(chat_id), {:search_messages, keyword})
   end
 
   # SERVER
@@ -30,23 +30,27 @@ defmodule ChatApp.ChatRoom do
   end
 
   def handle_call({:add_message, from, text}, _from, state) do
-    message = %{
-      from: from,
-      msg_content: text,
-      timestamp: DateTime.utc_now()
-    }
+    with {:ok, _} <- ChatApp.Accounts.get_user(from) do
+      message = %{
+        from: from,
+        msg_content: text,
+        timestamp: DateTime.utc_now()
+      }
 
-    messages =
-      [message | state.messages]
-      |> Enum.take(10)
+      messages =
+        [message | state.messages]
+        |> Enum.take(10)
 
-    new_state = %{state | messages: messages}
+      new_state = %{state | messages: messages}
 
-    Enum.each(state.participants, fn participant ->
-      ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
-    end)
+      Enum.each(state.participants, fn participant ->
+        ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
+      end)
 
-    {:reply, message, new_state}
+      {:reply, message, new_state}
+    else
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
   end
 
   def handle_call({:get_messages}, _from, state) do

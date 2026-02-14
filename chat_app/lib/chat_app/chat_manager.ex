@@ -82,7 +82,7 @@ defmodule ChatApp.ChatManager do
         {:reply, {:error, :chat_not_found}, state}
 
       [{pid, _}] ->
-        results = ChatRoom.search_messages(pid, keyword)
+        results = ChatRoom.search_messages(chat_id, keyword)
         {:reply, {:ok, results}, state}
     end
   end
