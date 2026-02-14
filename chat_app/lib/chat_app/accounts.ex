@@ -80,7 +80,7 @@ defmodule ChatApp.Accounts do
         {:reply, {:error, :cannot_add_self}, table}
 
       :ets.lookup(table, contact) == [] ->
-        {:reply, {:error, :contact_not_found}, table}
+        {:reply, {:error, :user_not_found}, table}
 
       true ->
         case :ets.lookup(table, username) do

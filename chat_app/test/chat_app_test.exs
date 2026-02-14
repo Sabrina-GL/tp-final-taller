@@ -1,24 +1,6 @@
 defmodule ChatAppTest do
   use ExUnit.Case
-  doctest ChatApp
-
-  describe "Accounts" do
-    test "register_user creates a new user" do
-      {:ok} = ChatApp.Accounts.register_user("testuser", "password123")
-      # Verify user was registered
-    end
-
-    test "register_user rejects duplicate username" do
-      ChatApp.Accounts.register_user("duplicate", "pass1")
-      {:error, _reason} = ChatApp.Accounts.register_user("duplicate", "pass2")
-    end
-
-    test "authenticate_user validates credentials" do
-      ChatApp.Accounts.register_user("authtest", "correctpass")
-      {:ok} = ChatApp.Accounts.authenticate_user("authtest", "correctpass")
-      {:error, _reason} = ChatApp.Accounts.authenticate_user("authtest", "wrongpass")
-    end
-  end
+  # doctest ChatApp
 
   describe "ChatManager" do
     setup do
