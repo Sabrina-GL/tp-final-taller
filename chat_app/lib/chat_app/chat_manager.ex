@@ -1,5 +1,6 @@
 defmodule ChatApp.ChatManager do
   use GenServer
+  alias ChatApp.{Accounts, ChatRoomSupervisor, ChatRoom, Notifications}
 
   # CLIENT API
 
@@ -26,53 +27,62 @@ defmodule ChatApp.ChatManager do
   end
 
   def handle_call({:get_or_create_private_chat, user1, user2}, _from, state) do
-    chat_id_1 = "#{Enum.sort([user1, user2]) |> Enum.join(":")}"
-    chat_id_2 = "#{Enum.sort([user2, user1]) |> Enum.join(":")}"
-    participants = [user1, user2]
+    if user1 == user2 do
+      {:reply, {:error, :cannot_chat_with_self}, state}
+    else
+      chat_id_1 = "#{Enum.sort([user1, user2]) |> Enum.join(":")}"
+      chat_id_2 = "#{Enum.sort([user2, user1]) |> Enum.join(":")}"
+      participants = [user1, user2]
 
-    case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_1) do
-      [] ->
-        case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_2) do
+      with {:ok, _} <- Accounts.get_user(user1),
+           {:ok, _} <- Accounts.get_user(user2) do
+        case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_1) do
           [] ->
-            {:ok, _pid} =
-              DynamicSupervisor.start_child(ChatApp.ChatRoomSupervisor, %{
-                id: ChatApp.ChatRoom,
-                start:
-                  {ChatApp.ChatRoom, :start_link,
-                   [
-                     %{
-                       chat_id: chat_id_1,
-                       type: :private,
-                       participants: participants,
-                       messages: []
-                     }
-                   ]}
-              })
+            case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_2) do
+              [] ->
+                {:ok, _pid} =
+                  DynamicSupervisor.start_child(ChatRoomSupervisor, %{
+                    id: ChatRoom,
+                    start:
+                      {ChatRoom, :start_link,
+                       [
+                         %{
+                           chat_id: chat_id_1,
+                           type: :private,
+                           participants: participants,
+                           messages: []
+                         }
+                       ]}
+                  })
 
-            ChatApp.Accounts.add_chatroom(user1, chat_id_1)
-            ChatApp.Accounts.add_chatroom(user2, chat_id_1)
+                Accounts.add_chatroom(user1, chat_id_1)
+                Accounts.add_chatroom(user2, chat_id_1)
 
-            # Notifico solo al usuario agregado
-            ChatApp.Notifications.notify_new_chatroom(user2, chat_id_1)
+                # Notifico solo al usuario agregado
+                Notifications.notify_new_chatroom(user2, chat_id_1)
 
-            {:reply, {:ok, chat_id_1}, state}
+                {:reply, {:ok, chat_id_1}, state}
+
+              [{_pid, _}] ->
+                {:reply, {:ok, chat_id_2}, state}
+            end
 
           [{_pid, _}] ->
-            {:reply, {:ok, chat_id_2}, state}
+            {:reply, {:ok, chat_id_1}, state}
         end
-
-      [{_pid, _}] ->
-        {:reply, {:ok, chat_id_1}, state}
+      else
+        {:error, reason} -> {:reply, {:error, reason}, state}
+      end
     end
   end
 
   def handle_call({:search_messages, chat_id, keyword}, _from, state) do
-    case Map.get(state, chat_id) do
-      nil ->
+    case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id) do
+      [] ->
         {:reply, {:error, :chat_not_found}, state}
 
-      pid ->
-        results = ChatApp.ChatRoom.search_messages(pid, keyword)
+      [{pid, _}] ->
+        results = ChatRoom.search_messages(pid, keyword)
         {:reply, {:ok, results}, state}
     end
   end

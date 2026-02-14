@@ -19,8 +19,8 @@ defmodule ChatApp.ChatRoom do
     GenServer.call(via_tuple(chat_id), {:get_messages})
   end
 
-  def search_messages(chat_id, keyword) do
-    GenServer.call(via_tuple(chat_id), {:search_messages, keyword})
+  def search_messages(pid, keyword) do
+    GenServer.call(pid, {:search_messages, keyword})
   end
 
   # SERVER

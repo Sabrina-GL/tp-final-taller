@@ -18,6 +18,10 @@ defmodule ChatApp.Accounts do
     GenServer.call(__MODULE__, {:authenticate_user, username, password})
   end
 
+  def get_user(username) do
+    GenServer.call(__MODULE__, {:get_user, username})
+  end
+
   def get_contacts(username) do
     GenServer.call(__MODULE__, {:get_contacts, username})
   end
@@ -61,6 +65,16 @@ defmodule ChatApp.Accounts do
 
       _ ->
         {:reply, {:error, :invalid_credentials}, table}
+    end
+  end
+
+  def handle_call({:get_user, username}, _from, table) do
+    case :ets.lookup(table, username) do
+      [{^username, user}] ->
+        {:reply, {:ok, user}, table}
+
+      _ ->
+        {:reply, {:error, :user_not_found}, table}
     end
   end
 
