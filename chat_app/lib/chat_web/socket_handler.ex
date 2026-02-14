@@ -59,6 +59,22 @@ defmodule ChatWeb.SocketHandler do
             {:error, reason} -> %{error: reason}
           end
 
+        "create_group_chat" ->
+          with {:ok, chat_id} <-
+                 ChatApp.ChatManager.create_group_chat(
+                   state.user,
+                   data["group_name"],
+                   data["participants"]
+                 ) do
+            %{
+              status: :group_chat_created,
+              chat_id: chat_id,
+              group_name: data["group_name"]
+            }
+          else
+            {:error, reason} -> %{error: reason}
+          end
+
         "send_message" ->
           message = ChatApp.ChatRoom.add_message(data["chat_id"], state.user, data["msg_content"])
 

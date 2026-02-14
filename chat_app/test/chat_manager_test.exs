@@ -93,6 +93,19 @@ defmodule ChatManagerTest do
     end
   end
 
+  describe "create_group_chat" do
+    test "create_group_chat creates a new group chat" do
+      {:ok, chat_id} =
+        ChatManager.create_group_chat("alice", "family", ["bob"])
+
+      assert chat_id == "group:family"
+
+      # Chequeo que el proceso del chat se haya registrado correctamente
+      assert [{pid, _}] = Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id)
+      assert Process.alive?(pid)
+    end
+  end
+
   describe "search_messages" do
     test "search_messages returns error for non-existent chat" do
       {:error, reason} = ChatManager.search_messages("nonexistent_chat", "keyword")

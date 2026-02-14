@@ -16,6 +16,10 @@ defmodule ChatApp.ChatManager do
     GenServer.call(__MODULE__, {:get_chat, chat_id})
   end
 
+  def create_group_chat(creator, group_name, participants) do
+    GenServer.call(__MODULE__, {:create_group_chat, creator, group_name, participants})
+  end
+
   def search_messages(chat_id, keyword) do
     GenServer.call(__MODULE__, {:search_messages, chat_id, keyword})
   end
@@ -74,6 +78,37 @@ defmodule ChatApp.ChatManager do
         {:error, reason} -> {:reply, {:error, reason}, state}
       end
     end
+  end
+
+  def handle_call({:create_group_chat, creator, name, participants}, _from, state) do
+    chat_id = "group:" <> name
+
+    all_participants =
+      [creator | participants]
+      |> Enum.uniq()
+
+    {:ok, _pid} =
+      DynamicSupervisor.start_child(ChatRoomSupervisor, %{
+        id: ChatRoom,
+        start:
+          {ChatRoom, :start_link,
+           [
+             %{
+               chat_id: chat_id,
+               group_name: name,
+               type: :group,
+               participants: all_participants,
+               messages: []
+             }
+           ]}
+      })
+
+    Enum.each(all_participants, fn user ->
+      Accounts.add_chatroom(user, chat_id)
+      Notifications.notify_new_chatroom(user, chat_id)
+    end)
+
+    {:reply, {:ok, chat_id}, state}
   end
 
   def handle_call({:search_messages, chat_id, keyword}, _from, state) do
