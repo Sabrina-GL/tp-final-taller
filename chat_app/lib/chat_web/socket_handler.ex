@@ -9,6 +9,12 @@ defmodule ChatWeb.SocketHandler do
   def websocket_init(state) do
     IO.puts("Cliente conectado: #{state.user}")
     Registry.register(ChatApp.UsersRegistry, state.user, self())
+    ChatApp.ActivityTracker.user_online(state.user)
+
+    pending = ChatApp.ActivityTracker.consume_pending(state.user)
+    Enum.each(pending, fn notification ->
+      send(self(), notification)
+    end)
     {:ok, state}
   end
 
@@ -105,7 +111,8 @@ defmodule ChatWeb.SocketHandler do
     {:ok, state}
   end
 
-  def terminate(_reason, _request, _state) do
+  def terminate(_reason, _request, state) do
+    ChatApp.ActivityTracker.user_offline(state.user)
     :ok
   end
 

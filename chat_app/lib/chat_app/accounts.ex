@@ -41,27 +41,53 @@ defmodule ChatApp.Accounts do
   # SERVER
 
   def handle_call({:register_user, username, password}, _from, table) do
-    case :ets.lookup(table, username) do
-      [] ->
-        user = %{
-          username: username,
-          password: password,
-          contacts: MapSet.new(),
-          chat_rooms: MapSet.new()
-        }
+    cond do
+      not is_binary(username) or String.trim(username) == "" ->
+        {:reply, {:error, :invalid_username}, table}
 
-        :ets.insert(table, {username, user})
-        {:reply, :ok, table}
+      String.length(username) < 3 ->
+        {:reply, {:error, :username_too_short}, table}
 
-      _ ->
-        {:reply, {:error, :user_exists}, table}
+      not is_binary(password) or String.length(password) < 6 ->
+        {:reply, {:error, :password_too_short}, table}
+
+      true ->
+        case :ets.lookup(table, username) do
+          [] ->
+            hashed = Bcrypt.hash_pwd_salt(password)
+
+            user = %{
+              username: username,
+              password: hashed,
+              contacts: MapSet.new(),
+              chat_rooms: MapSet.new()
+            }
+
+            :ets.insert(table, {username, user})
+            {:reply, :ok, table}
+
+          _ ->
+            {:reply, {:error, :user_exists}, table}
+        end
     end
   end
 
   def handle_call({:authenticate_user, username, password}, _from, table) do
     case :ets.lookup(table, username) do
-      [{^username, user}] when user.password == password ->
-        {:reply, :ok, table}
+      [{^username, user}] ->
+        cond do
+          Bcrypt.verify_pass(password, user.password) ->
+            {:reply, :ok, table}
+
+          user.password == password ->
+            hashed = Bcrypt.hash_pwd_salt(password)
+            updated_user = %{user | password: hashed}
+            :ets.insert(table, {username, updated_user})
+            {:reply, :ok, table}
+
+          true ->
+            {:reply, {:error, :invalid_credentials}, table}
+        end
 
       _ ->
         {:reply, {:error, :invalid_credentials}, table}

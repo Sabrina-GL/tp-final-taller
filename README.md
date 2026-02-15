@@ -36,9 +36,9 @@ ESTADO.md          # Estado del proyecto
 ## Caracteristicas implementadas
 
 ### Core
-- ✅ Alta de usuarios (registro basico, sin validaciones ni hash)
-- ✅ Autenticacion basica (comparacion directa de password)
-- ⚠️ Estado de conexion (estructura creada, sin logica)
+- ✅ Alta de usuarios (validaciones basicas + hash de password)
+- ✅ Autenticacion con hash de password
+- ✅ Estado de conexion (online/offline y last_seen)
 - ✅ Lista de contactos (agregar y listar)
 - ✅ Chats individuales (creacion de sala)
 - ✅ Chats grupales (creacion de sala)
@@ -46,7 +46,7 @@ ESTADO.md          # Estado del proyecto
 ### Mensajes
 - ✅ Ultimos 10 mensajes en cada conversacion
 - ✅ Busqueda de mensajes por palabra clave
-- ⚠️ Notificaciones solo para usuarios online (sin cola offline)
+- ✅ Notificaciones con cola offline y entrega al reconectar
 
 ### API y WebSocket
 - ✅ REST: /api/register y /api/login

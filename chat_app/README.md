@@ -163,5 +163,5 @@ mix compile
 - [README principal](../README.md)
 - [ARQUITECTURA.md](../ARQUITECTURA.md)
 - [DESARROLLO.md](../DESARROLLO.md)
-- [PROXIMOS_PASOS.md](../PROXIMOS_PASOS.md)
+- [ESTADO.md](../ESTADO.md)
 

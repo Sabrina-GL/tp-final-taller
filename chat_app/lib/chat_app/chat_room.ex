@@ -30,7 +30,8 @@ defmodule ChatApp.ChatRoom do
   end
 
   def handle_call({:add_message, from, text}, _from, state) do
-    with {:ok, _} <- ChatApp.Accounts.get_user(from) do
+    with true <- Enum.member?(state.participants, from),
+         {:ok, _} <- ChatApp.Accounts.get_user(from) do
       message = %{
         from: from,
         msg_content: text,
@@ -49,6 +50,7 @@ defmodule ChatApp.ChatRoom do
 
       {:reply, message, new_state}
     else
+      false -> {:reply, {:error, :not_participant}, state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
