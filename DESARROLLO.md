@@ -33,7 +33,8 @@ iex -S mix
 
 ```
 ChatApp.Supervisor (one_for_one)
-├── Registry (UsersOnlineRegistry)
+├── Registry (UsersRegistry)
+├── Registry (ChatRoomsRegistry)
 ├── ChatApp.Accounts (GenServer)
 ├── ChatApp.ChatManager (GenServer)
 ├── ChatApp.ActivityTracker (GenServer)
@@ -63,9 +64,7 @@ ChatWeb.SocketHandler.websocket_handle/2
     ↓
 Parse JSON
     ↓
-ChatApp.ChatManager.send_message/3
-    ↓
-ChatApp.ChatRoom.add_message/2
+ChatApp.ChatRoom.add_message/3
     ↓
 Broadcast a clientes conectados
 ```
@@ -74,11 +73,9 @@ Broadcast a clientes conectados
 ```
 Usuario conecta
     ↓
-ChatApp.ActivityTracker.user_online/1
-    ↓
-Registry registra conexión
-    ↓
-Al desconectar: user_offline/1
+Registry registra conexión (UsersRegistry)
+  ↓
+Al desconectar: falta implementar ActivityTracker
 ```
 
 ## Mejoras Futuras
@@ -170,7 +167,7 @@ Objetivo: >80% de cobertura
 :sys.trace(ChatApp.ChatManager, true)
 
 # Ver registro de usuarios online
-Registry.lookup(ChatApp.UsersOnlineRegistry, "alice")
+Registry.lookup(ChatApp.UsersRegistry, "alice")
 ```
 
 ### Logs

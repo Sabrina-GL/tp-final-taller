@@ -9,9 +9,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 - [chat_app/README.md](chat_app/README.md) - Guia tecnica del backend (API, modulos, configuracion, troubleshooting)
 - [ARQUITECTURA.md](ARQUITECTURA.md) - Decisiones y diagrama general
 - [DESARROLLO.md](DESARROLLO.md) - Lineamientos de desarrollo
-- [CHECKLIST.md](CHECKLIST.md) - Checklist de entrega
-- [PROXIMOS_PASOS.md](PROXIMOS_PASOS.md) - Mejoras pendientes
-- [RESUMEN_CONFIGURACION.md](RESUMEN_CONFIGURACION.md) - Resumen de configuraciones
+- [ESTADO.md](ESTADO.md) - Resumen de lo implementado y lo pendiente
 - [consigna-tp-final.txt](consigna-tp-final.txt) - Enunciado del trabajo
 
 ## Inicio rapido
@@ -32,24 +30,27 @@ Servidor disponible en `http://localhost:4000`.
 chat_app/          # Backend Elixir + OTP
 ARQUITECTURA.md    # Arquitectura general
 DESARROLLO.md      # Guia de desarrollo
-CHECKLIST.md       # Checklist de entrega
-PROXIMOS_PASOS.md  # Roadmap
+ESTADO.md          # Estado del proyecto
 ```
 
 ## Caracteristicas implementadas
 
 ### Core
-- ✅ Alta de usuarios (registro con contrasena)
-- ✅ Autenticacion
-- ✅ Estado de conexion (activo/inactivo)
-- ✅ Lista de contactos
-- ✅ Chats individuales (1-a-1)
-- ✅ Chats grupales
+- ✅ Alta de usuarios (registro basico, sin validaciones ni hash)
+- ✅ Autenticacion basica (comparacion directa de password)
+- ⚠️ Estado de conexion (estructura creada, sin logica)
+- ✅ Lista de contactos (agregar y listar)
+- ✅ Chats individuales (creacion de sala)
+- ✅ Chats grupales (creacion de sala)
 
 ### Mensajes
 - ✅ Ultimos 10 mensajes en cada conversacion
 - ✅ Busqueda de mensajes por palabra clave
-- ✅ Notificaciones de mensajes pendientes
+- ⚠️ Notificaciones solo para usuarios online (sin cola offline)
+
+### API y WebSocket
+- ✅ REST: /api/register y /api/login
+- ✅ WebSocket: acciones get_contacts, get_chatrooms, get_messages, add_contact, create_group_chat, send_message
 
 ### Opcionales
 - ⏳ Envio de imagenes/archivos

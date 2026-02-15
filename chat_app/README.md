@@ -52,11 +52,19 @@ ws://localhost:4000/ws?user=username
 Mensajes soportados:
 ```json
 {
-  "type": "message",
+  "action": "send_message",
   "chat_id": "chat_123",
-  "content": "Hola!"
+  "msg_content": "Hola!"
 }
 ```
+
+Acciones disponibles:
+- get_contacts
+- get_chatrooms
+- get_messages
+- add_contact
+- create_group_chat
+- send_message
 
 ## Consola interactiva (IEx)
 
@@ -66,19 +74,16 @@ ChatApp.Accounts.register_user("alice", "pass123")
 ChatApp.Accounts.register_user("bob", "pass456")
 
 # Crear chat privado
-{:ok, chat_id} = ChatApp.ChatManager.create_direct_chat("alice", "bob")
+{:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("alice", "bob")
 
 # Enviar mensaje
-ChatApp.ChatManager.send_message(chat_id, "alice", "Hola Bob!")
+ChatApp.ChatRoom.add_message(chat_id, "alice", "Hola Bob!")
 
 # Obtener mensajes
-ChatApp.ChatManager.get_messages(chat_id, 10)
+ChatApp.ChatRoom.get_messages(chat_id)
 
 # Buscar mensajes
-ChatApp.ChatManager.search_messages(chat_id, "Hola")
-
-# Ver usuarios online
-ChatApp.ActivityTracker.get_online_users()
+ChatApp.ChatRoom.search_messages(chat_id, "Hola")
 ```
 
 ## Modulos principales
