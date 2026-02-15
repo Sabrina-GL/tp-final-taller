@@ -3,21 +3,15 @@ defmodule ChatManagerTest do
   alias ChatApp.{ChatManager, ChatRoom, Accounts}
 
   setup do
-    # if Process.whereis(ChatManager) do
-    #   GenServer.stop(ChatManager)
-    # end
-    {:ok, _} = Application.ensure_all_started(:chat_app)
-
-    # if Process.whereis(Accounts) do
-    #   GenServer.stop(Accounts)
-    # end
+    case :ets.whereis(:accounts) do
+      :undefined -> :ok
+      tid -> :ets.delete_all_objects(tid)
+    end
 
     Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
-    # {:ok, _pid} = ChatManager.start_link(nil)
-    # {:ok, _pid} = Accounts.start_link(nil)
 
-    Accounts.register_user("alice", "pass1")
-    Accounts.register_user("bob", "pass2")
+    Accounts.register_user("alice", "pass123")
+    Accounts.register_user("bob", "pass234")
     :ok
   end
 

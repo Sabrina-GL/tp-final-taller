@@ -35,41 +35,34 @@ defmodule ChatApp.ChatManager do
       {:reply, {:error, :cannot_chat_with_self}, state}
     else
       chat_id_1 = "#{Enum.sort([user1, user2]) |> Enum.join(":")}"
-      chat_id_2 = "#{Enum.sort([user2, user1]) |> Enum.join(":")}"
       participants = [user1, user2]
 
       with {:ok, _} <- Accounts.get_user(user1),
            {:ok, _} <- Accounts.get_user(user2) do
         case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_1) do
           [] ->
-            case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id_2) do
-              [] ->
-                {:ok, _pid} =
-                  DynamicSupervisor.start_child(ChatRoomSupervisor, %{
-                    id: ChatRoom,
-                    start:
-                      {ChatRoom, :start_link,
-                       [
-                         %{
-                           chat_id: chat_id_1,
-                           type: :private,
-                           participants: participants,
-                           messages: []
-                         }
-                       ]}
-                  })
+            {:ok, _pid} =
+              DynamicSupervisor.start_child(ChatRoomSupervisor, %{
+                id: ChatRoom,
+                start:
+                  {ChatRoom, :start_link,
+                   [
+                     %{
+                       chat_id: chat_id_1,
+                       type: :private,
+                       participants: participants,
+                       messages: []
+                     }
+                   ]}
+              })
 
-                Accounts.add_chatroom(user1, chat_id_1)
-                Accounts.add_chatroom(user2, chat_id_1)
+            Accounts.add_chatroom(user1, chat_id_1)
+            Accounts.add_chatroom(user2, chat_id_1)
 
-                # Notifico solo al usuario agregado
-                Notifications.notify_new_chatroom(user2, chat_id_1)
+            # Notifico solo al usuario agregado
+            Notifications.notify_new_chatroom(user2, chat_id_1)
 
-                {:reply, {:ok, chat_id_1}, state}
-
-              [{_pid, _}] ->
-                {:reply, {:ok, chat_id_2}, state}
-            end
+            {:reply, {:ok, chat_id_1}, state}
 
           [{_pid, _}] ->
             {:reply, {:ok, chat_id_1}, state}
@@ -105,7 +98,10 @@ defmodule ChatApp.ChatManager do
 
     Enum.each(all_participants, fn user ->
       Accounts.add_chatroom(user, chat_id)
-      Notifications.notify_new_chatroom(user, chat_id)
+      # Solo notificar a los participantes que no son el creador
+      if user != creator do
+        Notifications.notify_new_chatroom(user, chat_id)
+      end
     end)
 
     {:reply, {:ok, chat_id}, state}
@@ -116,7 +112,7 @@ defmodule ChatApp.ChatManager do
       [] ->
         {:reply, {:error, :chat_not_found}, state}
 
-      [{pid, _}] ->
+      [{_pid, _}] ->
         results = ChatRoom.search_messages(chat_id, keyword)
         {:reply, {:ok, results}, state}
     end

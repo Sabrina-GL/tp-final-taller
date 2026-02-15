@@ -3,11 +3,11 @@ defmodule AccountsTest do
   alias ChatApp.Accounts
 
   setup do
-    if Process.whereis(Accounts) do
-      GenServer.stop(Accounts)
+    case :ets.whereis(:accounts) do
+      :undefined -> :ok
+      tid -> :ets.delete_all_objects(tid)
     end
 
-    {:ok, _pid} = Accounts.start_link(nil)
     :ok
   end
 
@@ -18,8 +18,8 @@ defmodule AccountsTest do
     end
 
     test "register_user rejects duplicate username" do
-      Accounts.register_user("duplicate", "pass1")
-      assert {:error, :user_exists} = Accounts.register_user("duplicate", "pass2")
+      Accounts.register_user("duplicate", "pass123")
+      assert {:error, :user_exists} = Accounts.register_user("duplicate", "pass234")
     end
   end
 
@@ -43,8 +43,8 @@ defmodule AccountsTest do
   describe "contacts" do
     setup do
       # Setup test users
-      Accounts.register_user("alice", "pass1")
-      Accounts.register_user("bob", "pass2")
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
       :ok
     end
 
@@ -78,7 +78,7 @@ defmodule AccountsTest do
 
   describe "account's chatrooms" do
     setup do
-      Accounts.register_user("charlie", "pass3")
+      Accounts.register_user("charlie", "pass345")
       :ok
     end
 

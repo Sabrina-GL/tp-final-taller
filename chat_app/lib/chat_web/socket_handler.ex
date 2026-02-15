@@ -45,6 +45,12 @@ defmodule ChatWeb.SocketHandler do
           {:ok, messages} = ChatApp.ChatRoom.get_messages(data["chat_id"])
           %{messages: messages}
 
+        "get_status" ->
+          user = data["user"] || state.user
+          online? = ChatApp.ActivityTracker.is_online?(user)
+          last_seen = ChatApp.ActivityTracker.last_seen(user)
+          %{user: user, online: online?, last_seen: last_seen}
+
         "add_contact" ->
           with :ok <- ChatApp.Accounts.add_contact(state.user, data["contact"]),
                {:ok, contacts} <- ChatApp.Accounts.get_contacts(state.user),
@@ -82,9 +88,14 @@ defmodule ChatWeb.SocketHandler do
           end
 
         "send_message" ->
-          message = ChatApp.ChatRoom.add_message(data["chat_id"], state.user, data["msg_content"])
+          case ChatApp.ChatRoom.add_message(data["chat_id"], state.user, data["msg_content"]) do
+            {:error, reason} ->
+              %{status: :error, error: reason}
 
-          %{status: :ok, message: message}
+            message ->
+              # Las notificaciones ya son manejadas por ChatRoom.add_message
+              %{status: :ok, message: message}
+          end
 
         _ ->
           %{error: :unknown_action}
@@ -114,15 +125,5 @@ defmodule ChatWeb.SocketHandler do
   def terminate(_reason, _request, state) do
     ChatApp.ActivityTracker.user_offline(state.user)
     :ok
-  end
-
-  defp open_chat_room(user1, user2) do
-    chat_id = "#{Enum.sort([user1, user2]) |> Enum.join(":")}"
-
-    with {:ok, _chat_pid} <- ChatApp.ChatManager.get_or_create_private_chat(user1, user2) do
-      %{status: :chat_opened, chat_id: chat_id, type: :private}
-    else
-      {:error, reason} -> %{error: reason}
-    end
   end
 end

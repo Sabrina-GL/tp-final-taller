@@ -19,6 +19,10 @@ defmodule ChatApp.ChatRoom do
     GenServer.call(via_tuple(chat_id), {:get_messages})
   end
 
+  def get_room_state(chat_id) do
+    GenServer.call(via_tuple(chat_id), {:get_room_state})
+  end
+
   def search_messages(chat_id, keyword) do
     GenServer.call(via_tuple(chat_id), {:search_messages, keyword})
   end
@@ -44,8 +48,11 @@ defmodule ChatApp.ChatRoom do
 
       new_state = %{state | messages: messages}
 
+      # Notificar a todos los participantes excepto al remitente
       Enum.each(state.participants, fn participant ->
-        ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
+        if participant != from do
+          ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
+        end
       end)
 
       {:reply, message, new_state}
@@ -57,6 +64,10 @@ defmodule ChatApp.ChatRoom do
 
   def handle_call({:get_messages}, _from, state) do
     {:reply, {:ok, state.messages}, state}
+  end
+
+  def handle_call({:get_room_state}, _from, state) do
+    {:reply, {:ok, state}, state}
   end
 
   def handle_call({:search_messages, keyword}, _from, state) do

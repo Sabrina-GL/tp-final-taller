@@ -60,6 +60,29 @@ defmodule ChatWeb.Router do
     end
   end
 
+  get "/api/status" do
+    user = conn.params["user"]
+
+    if user && user != "" do
+      online? = ChatApp.ActivityTracker.is_online?(user)
+      last_seen_result = ChatApp.ActivityTracker.last_seen(user)
+
+      # Extract datetime from result tuple
+      last_seen = case last_seen_result do
+        {:ok, datetime} -> datetime
+        {:error, _} -> nil
+      end
+
+      send_resp(
+        conn,
+        200,
+        Jason.encode!(%{user: user, online: online?, last_seen: last_seen})
+      )
+    else
+      send_resp(conn, 400, Jason.encode!(%{error: "user parameter required"}))
+    end
+  end
+
   get "/ws" do
     # Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, %{}, %{}})
     user = conn.params["user"]

@@ -62,6 +62,7 @@ Acciones disponibles:
 - get_contacts
 - get_chatrooms
 - get_messages
+- get_status
 - add_contact
 - create_group_chat
 - send_message

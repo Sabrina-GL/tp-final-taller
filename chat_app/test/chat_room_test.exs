@@ -3,10 +3,18 @@ defmodule ChatApp.ChatRoomTest do
   alias ChatApp.{ChatRoom, Accounts}
 
   setup do
+    case :ets.whereis(:accounts) do
+      :undefined -> :ok
+      tid -> :ets.delete_all_objects(tid)
+    end
+
     Accounts.register_user("alice", "password")
     Accounts.register_user("bob", "password")
 
     # Limpiar el registro de chat rooms antes de cada prueba
+    Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
+    |> Enum.each(&Process.exit(&1, :kill))
+
     Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
 
     chat_id = "alice:bob"
@@ -23,9 +31,9 @@ defmodule ChatApp.ChatRoomTest do
   end
 
   describe "add_message" do
-    test "no permite agregar mensajes de usuarios no registrados", %{chat_id: chat_id} do
+    test "no permite agregar mensajes de usuarios que no son participantes", %{chat_id: chat_id} do
       {:error, reason} = ChatRoom.add_message(chat_id, "charlie", "Hola a todos")
-      assert reason == :user_not_found
+      assert reason == :not_participant
     end
 
     test "agrega un mensaje al chat room", %{chat_id: chat_id} do
@@ -72,12 +80,6 @@ defmodule ChatApp.ChatRoomTest do
     test "search_messages devuelve solo los mensajes que contienen la palabra clave", %{
       chat_id: chat_id
     } do
-      ChatRoom.start_link(%{
-        chat_id: chat_id,
-        participants: ["alice", "bob"],
-        messages: []
-      })
-
       ChatRoom.add_message(chat_id, "alice", "hola juan")
       ChatRoom.add_message(chat_id, "bob", "chau ana")
       ChatRoom.add_message(chat_id, "alice", "hola de nuevo")
@@ -87,12 +89,6 @@ defmodule ChatApp.ChatRoomTest do
     end
 
     test "search_messages devuelve una lista vacía si no hay coincidencias", %{chat_id: chat_id} do
-      ChatRoom.start_link(%{
-        chat_id: chat_id,
-        participants: ["alice", "bob"],
-        messages: []
-      })
-
       ChatRoom.add_message(chat_id, "alice", "hola juan")
       ChatRoom.add_message(chat_id, "bob", "chau ana")
 
@@ -101,12 +97,6 @@ defmodule ChatApp.ChatRoomTest do
     end
 
     test "search_messages es case-insensitive", %{chat_id: chat_id} do
-      ChatRoom.start_link(%{
-        chat_id: chat_id,
-        participants: ["alice", "bob"],
-        messages: []
-      })
-
       ChatRoom.add_message(chat_id, "alice", "Hola Juan")
       ChatRoom.add_message(chat_id, "bob", "chau ana")
 
