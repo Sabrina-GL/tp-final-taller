@@ -1,6 +1,7 @@
 let ws = null;
 let currentUser = null;
 let currentChatRoom = null;
+let activeSection = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log("DOM cargado");
@@ -37,7 +38,64 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Iniciar WebSocket
     connectWebSocket(username);
+
+
+
+
+    document.querySelectorAll(".icon-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.getAttribute("data-target");
+
+            sidebar.classList.remove("hidden");
+
+            if (activeSection === target) {
+                closeSidebar();
+                return;
+            }
+
+            openSection(target);
+        });
+    });
 });
+
+function openSection(section) {
+    const sidebar = document.getElementById("sidebar");
+    const contactsSection = document.getElementById("contacts-section");
+    const chatRoomsSection = document.getElementById("chatrooms-section");
+
+    sidebar.classList.add("open");
+
+    contactsSection.classList.add("hidden");
+    chatRoomsSection.classList.add("hidden");
+
+    if (section === "contacts") {
+        contactsSection.classList.remove("hidden");
+    } else if (section === "chatrooms") {
+        chatRoomsSection.classList.remove("hidden");
+    }
+
+    activeSection = section;
+    setActiveSection(section);
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById("sidebar");
+
+    sidebar.classList.remove("open");
+    clearActiveSection();
+    activeSection = null;
+}
+
+function setActiveSection(section) {
+    clearActiveSection();
+    document.querySelector(`.icon-btn[data-target="${section}"]`)?.classList.add("active");
+}
+
+function clearActiveSection() {
+    document.querySelectorAll(".icon-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+}
 
 function connectWebSocket(username) {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -138,9 +196,11 @@ function openChatRoom(chat_id) {
     console.log("Abriendo chat room:", chat_id)
     currentChatRoom = chat_id;
 
-    document.getElementById("chat-container").style.display = "block";
+    // document.getElementById("chat-container").style.display = "block";
     document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
     document.getElementById("chat-messages").innerHTML = "";
+
+    closeSidebar();
 
     getChatRoomMessages(chat_id);
 }
@@ -185,8 +245,25 @@ function renderChatRoomMessages(messages) {
 function renderMessage(message) {
     const messagesContainer = document.getElementById("chat-messages");
     const msgDiv = document.createElement("div");
-    msgDiv.textContent = `${message.from}: ${message.msg_content}`;
+    msgDiv.classList.add("chat-message");
+
+    if (message.from === currentUser) {
+        msgDiv.classList.add("chat-message-sent");
+    } else {
+        msgDiv.classList.add("chat-message-received");
+    }
+
+    msgDiv.innerHTML = `
+    <div class="message-bubble">
+    <div class="message-author">${message.from}</div>
+    <div class="message-content">${message.msg_content}</div>
+    <div class="message-timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+    </div>
+    `;
+
+    // msgDiv.textContent = `${message.from}: ${message.msg_content}`;
     messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 function sendMessage() {

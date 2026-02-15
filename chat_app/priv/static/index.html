@@ -5,31 +5,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/app.css">
 </head>
 
 <body>
+    <div class="app-layout">
+        <nav class="app-nav">
+            <div class="app-header">
+                <h1>Chat App</h1>
+            </div>
 
-    <h3>Bienvenid@!</h3>
+            <button class="icon-btn" data-target="contacts">👥</button>
+            <button class="icon-btn" data-target="chatrooms">💬</button>
+            <button class="icon-btn" id="logout-btn">🚪</button>
 
-    <div id="contacts-container">
-        <h3>Mis Contactos</h3>
+            <div id="user-info">
+                <span id="username-display"></span>
+            </div>
+        </nav>
 
-        <ul id="contacts-list"></ul>
-        <input type="text" id="contact" placeholder="Nuevo contacto">
-        <button id="add-contact-btn">Agregar Contacto</button>
-    </div>
+        <!-- <header class="app-header">
+            <h1>Chat App</h1>
+        </header> -->
 
-    <div id="chatrooms-container">
-        <h3>Mis Chats</h3>
-        <ul id="chatrooms-list"></ul>
-    </div>
 
-    <div id="chat-container">
-        <h3 id="chat-title">Chat</h3>
-        <div id="chat-messages" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 10px;">
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-section" id="contacts-section">
+                <h3>Mis Contactos</h3>
+                <ul id="contacts-list"></ul>
+
+                <div id="add-contact-section">
+                    <input type="text" id="contact" placeholder="Nuevo contacto">
+                    <button id="add-contact-btn">Agregar Contacto</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="chatrooms-section">
+                <h3>Mis Chats</h3>
+                <ul class="list" id="chatrooms-list"></ul>
+
+                <div id="create-groupchat-section">
+                    <button id="new-group-chat-btn">Nuevo Grupo</button>
+                </div>
+            </div>
+        </aside>
+
+
+
+        <div class="chat-container">
+            <header class="chat-header">
+                <h3 id="chat-title">Chat</h3>
+            </header>
+
+            <div class="chat-messages" id="chat-messages"></div>
+
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Escribí un mensaje...">
+                <button id="send-message-btn">Enviar</button>
+            </div>
         </div>
-        <input type="text" id="message-input" placeholder="Escribí un mensaje...">
-        <button id="send-message-btn">Enviar</button>
     </div>
 
     <script src="/static/application.js"></script>
