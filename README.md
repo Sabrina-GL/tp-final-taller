@@ -7,6 +7,8 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 ## Documentacion
 
 - [chat_app/README.md](chat_app/README.md) - Guia tecnica del backend (API, modulos, configuracion, troubleshooting)
+- [CLIENT_README.md](CLIENT_README.md) - Guia completa del cliente por consola (Python)
+- [DEMO.md](DEMO.md) - Guia paso a paso para la demostración en vivo
 - [ARQUITECTURA.md](ARQUITECTURA.md) - Decisiones y diagrama general
 - [DESARROLLO.md](DESARROLLO.md) - Lineamientos de desarrollo
 - [ESTADO.md](ESTADO.md) - Resumen de lo implementado y lo pendiente
@@ -14,6 +16,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 
 ## Inicio rapido
 
+### 1. Servidor Elixir
 ```bash
 git clone <repository-url>
 cd tp-final-taller/chat_app
@@ -23,6 +26,15 @@ iex -S mix
 ```
 
 Servidor disponible en `http://localhost:4000`.
+
+### 2. Cliente por Consola
+```bash
+cd tp-final-taller
+pip install -r requirements.txt
+python3 client.py
+```
+
+Sigue el menú interactivo para registrarte, iniciar sesión y usar el chat.
 
 ## Estructura principal
 
@@ -62,7 +74,7 @@ ESTADO.md          # Estado del proyecto
 
 ### Opcionales
 - ✅ Front-end HTML/CSS con WebSocket (básico funcional)
-- ⏳ Cliente por consola interactivo
+- ✅ Cliente por consola interactivo (Python con WebSocket)
 - ⏳ Envío de imágenes/archivos
 - ⏳ Bloquear contactos
 - ⏳ Borrar mensajes
@@ -77,7 +89,7 @@ ESTADO.md          # Estado del proyecto
 - ✅ Tests básicos con buena cobertura
 - ✅ Documentación completa
 
-**Pendiente**: Cliente por consola (requisito explícito en consigna). Actualmente se puede usar IEx o el frontend web.
+**El proyecto cumple TODOS los requisitos de la consigna**, incluyendo el cliente por consola en Python que permite interactuar con todas las features vía WebSocket.
 
 ## Licencia
 

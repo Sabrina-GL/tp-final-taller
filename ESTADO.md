@@ -56,6 +56,13 @@ Acciones disponibles:
 - Páginas: registro, login, chat
 - Cliente web funcional en `priv/static/`
 
+### Cliente por consola (opcional implementado) ✅
+- **Cliente Python interactivo** (`client.py`)
+- WebSocket con todas las features: registro, login, contactos, chats, mensajes
+- Menú interactivo con 9 opciones principales
+- Notificaciones en tiempo real
+- Documentación completa en [CLIENT_README.md](CLIENT_README.md)
+
 ## 🔧 Mejoras recientes aplicadas
 - **Corregido**: Manejo de errores en send_message (retorna error si usuario no es participante)
 - **Corregido**: Notificaciones ahora excluyen al remitente
@@ -65,37 +72,31 @@ Acciones disponibles:
 
 ## ⏳ Pendiente (features opcionales de la consigna)
 
-### Cliente por consola
-- Cliente interactivo que use todas las features vía WebSocket
-- Actualmente se puede interactuar por IEx o navegador web
-
 ### Opcionales no implementados
 - ❌ Envío de archivos/imágenes
 - ❌ Bloqueo de contactos
 - ❌ Borrar mensajes
 - ❌ Backups de mensajes
 
+**NOTA**: Todos los requisitos obligatorios de la consigna están completos, incluyendo el cliente por consola.
+
 ## 📋 Próximos pasos sugeridos (en orden de prioridad)
 
-### 1. Cliente por consola (REQUERIDO por consigna)
-- Python/Node.js que se conecte vía WebSocket
-- Permite probar todas las features sin navegador
-- **Prioritario**: Es un requisito explícito de la consigna
-
-### 2. Mejorar cobertura de tests
+### 1. Mejorar cobertura de tests
 - Agregar tests para SocketHandler (WebSocket)
 - Alcanzar >80% de cobertura total
 - Tests de integración end-to-end
 
-### 3. Persistencia (mejora robustez)
+### 2. Persistencia (mejora robustez)
 - Implementar Ecto + SQLite para usuarios y mensajes
 - Permite recuperar datos después de reiniciar servidor
 - Evita pérdida de información
 
-### 4. Features opcionales
+### 3. Features opcionales
 - Envío de archivos (Base64 vía WebSocket)
 - Bloqueo de contactos
 - Borrar mensajes
+- Backups automáticos
 
 ## 📊 Estado vs Consigna
 
@@ -110,7 +111,7 @@ Acciones disponibles:
 | Búsqueda en mensajes | ✅ Por keyword |
 | Notificaciones offline | ✅ Con cola y entrega |
 | Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
-| Cliente por consola | ❌ **FALTA** |
+| Cliente por consola | ✅ **Python con WebSocket** |
 | Tests básicos | ✅ 59 tests, 74.68% cobertura |
 | OTP correctamente | ✅ Supervision tree completo |
 
