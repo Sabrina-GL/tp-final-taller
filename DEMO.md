@@ -172,9 +172,77 @@ mix test
 1. **OTP completo**: Supervision tree, GenServers, Registries
 2. **WebSocket bidireccional**: Cliente ↔ Servidor
 3. **Notificaciones real-time**: Sin polling
-4. **26Cola offline inteligente**: Guarda y entrega al reconectar
+4. **Cola offline inteligente**: Guarda y entrega al reconectar
 5. **Tests robustos**: 87.37% cobertura
 6. **Cliente por consola funcional**: Todas las features accesibles
+
+---
+
+## 🌐 ALTERNATIVA: Demo con Cliente Web
+
+Si prefieres demostrar con la interfaz web (sin cliente Python), es más simple:
+
+### Preparación
+
+```bash
+cd chat_app
+iex -S mix
+```
+
+Esperar a: `💬 Chat application started on port 4000`
+
+### Demostración en Navegador
+
+Abre dos navegadores en:
+```
+http://localhost:4000
+```
+
+**Usuario 1 (Alice)**:
+1. Click "Register"
+2. Usuario: `alice`, Password: `alice123`
+3. Submit → Login automático
+
+**Usuario 2 (Bob)**  - En otra ventana:
+1. Click "Register"
+2. Usuario: `bob`, Password: `bob123456`
+3. Submit → Login automático
+
+### Flujo Demo Web
+
+**Paso 1: Ver Contactos (Alice)**
+- Click en el icono 👥 (Contacts)
+- Mostrará lista vacía
+
+**Paso 2: Agregar Contacto (Alice)**
+- Campo "Nuevo contacto" → Escribe "bob" → Enter
+- Bob recibe notificación automática
+
+**Paso 3: Ver Chats (Alice)**
+- Click en icono 💬 (Chats)
+- Mostrará chat "alice:bob" creado automáticamente
+
+**Paso 4: Enviar Mensaje (Alice)**
+- Click en chat "alice:bob"
+- Campo texto → "Hola Bob, ¿cómo estás?" → Enter
+- Bob lo recibe en tiempo real
+
+**Paso 5: Ver Estado**
+- Click en usuario Bob en lista de contactos
+- Mostrará: "online" + timestamp de conexión
+
+**Paso 6: Chat Grupal (Bob)**
+- Click en "+ New Group"
+- Nombre: "equipo"
+- Participantes: alice
+- Crear → Notificación a Alice inmediata
+
+### Ventajas del Cliente Web
+- ✅ Visual y fácil de seguir
+- ✅ Interfaz gráfica clara
+- ✅ Notificaciones integradas
+- ✅ Búsqueda visible
+- ✅ Historial de mensajes
 
 ### Archivo de Log de Demo
 

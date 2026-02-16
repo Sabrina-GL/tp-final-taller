@@ -31,7 +31,7 @@ iex -S mix
 
 Servidor disponible en `http://localhost:4000`.
 
-### 2. Cliente por Consola
+### 2. Cliente por Consola (Python)
 ```bash
 cd tp-final-taller
 pip install -r requirements.txt
@@ -39,6 +39,21 @@ python3 client.py
 ```
 
 Sigue el menú interactivo para registrarte, iniciar sesión y usar el chat.
+
+**Documentación**: Ver [CLIENT_README.md](CLIENT_README.md)
+
+### 3. Cliente Web (Navegador)
+El servidor sirve una interfaz web en:
+```
+http://localhost:4000
+```
+
+Abre en tu navegador y:
+1. Register (crear cuenta)
+2. Login (inicia sesión)
+3. Usa el chat desde la interfaz gráfica
+
+**Características**: Contactos, chats 1-a-1, chats grupales, mensajes, búsqueda, notificaciones
 
 ## Estructura principal
 

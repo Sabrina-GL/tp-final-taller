@@ -53,24 +53,29 @@ Acciones disponibles:
 - Registro de estado online/offline por usuario
 - Timestamp de última conexión (last_seen)
 
+### 🖥️ Clientes Disponibles (DOS opciones)
+
+#### Cliente Web (HTML/CSS)
+- Interfaz gráfica en navegador
+- Acceso: `http://localhost:4000`
+- Páginas: registro, login, chat
+- Features: Contactos, chats 1-a-1, chats grupales, mensajes, búsqueda, notificaciones en tiempo real
+- Archivos: `priv/static/index.html`, `login.html`, `register.html`, `application.js`, CSS
+
+#### Cliente por Consola (Python)
+- Cliente interactivo en Python
+- Archivo: `client.py` (en raíz del proyecto)
+- WebSocket con todas las features
+- Menú interactivo con 9 opciones principales
+- Notificaciones en tiempo real
+- Documentación: [CLIENT_README.md](CLIENT_README.md)
+
 ### Testing
 - **103 tests** implementados con **87.37% de cobertura**
 - Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
 - Todos los tests pasan exitosamente ✅
-- Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están cubiertos
-
-### Frontend básico (opcional implementado)
-- HTML/CSS con conexión WebSocket
-- Páginas: registro, login, chat
-- Cliente web funcional en `priv/static/`
-
-### Cliente por consola (opcional implementado) ✅
-- **Cliente Python interactivo** (`client.py`)
-- WebSocket con todas las features: registro, login, contactos, chats, mensajes
-- Menú interactivo con 9 opciones principales
-- Notificaciones en tiempo real
-- Documentación completa en [CLIENT_README.md](CLIENT_README.md)
+- Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos
 
 ## 🔧 Mejoras recientes aplicadas
 - **Corregido**: Manejo de errores en send_message (retorna error si usuario no es participante)
