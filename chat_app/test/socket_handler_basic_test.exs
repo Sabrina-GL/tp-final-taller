@@ -3,18 +3,33 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   alias ChatWeb.SocketHandler
 
   setup do
-    case :ets.whereis(:accounts) do
+    # Clear database before each test
+    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
+    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+
+    # Clear in-memory metadata for accounts
+    case :ets.whereis(:accounts_metadata) do
       :undefined -> :ok
       tid -> :ets.delete_all_objects(tid)
     end
 
-    Registry.unregister_match(ChatApp.UsersRegistry, :_, :_)
-    Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
-    |> Enum.each(fn pid ->
-      if Process.alive?(pid), do: Process.exit(pid, :kill)
-    end)
+    try do
+      Registry.unregister_match(ChatApp.UsersRegistry, :_, :_)
+    rescue
+      _e -> :ok
+    end
 
-    Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
+    try do
+      Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
+      |> Enum.each(fn pid ->
+        if Process.alive?(pid), do: Process.exit(pid, :kill)
+      end)
+
+      Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
+    rescue
+      _e -> :ok
+    end
+
     ChatApp.ActivityTracker.consume_pending("alice")
     ChatApp.ActivityTracker.user_offline("alice")
 

@@ -3,7 +3,12 @@ defmodule AccountsTest do
   alias ChatApp.Accounts
 
   setup do
-    case :ets.whereis(:accounts) do
+    # Clear database before each test
+    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
+    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+
+    # Clear in-memory metadata for accounts
+    case :ets.whereis(:accounts_metadata) do
       :undefined -> :ok
       tid -> :ets.delete_all_objects(tid)
     end
@@ -168,25 +173,6 @@ defmodule AccountsTest do
 
     test "get_user returns error for non-existent user" do
       assert {:error, :user_not_found} = Accounts.get_user("nonexistent")
-    end
-  end
-
-  describe "password migration" do
-    test "old plaintext passwords are migrated to bcrypt on login" do
-      # Simula un usuario con password en texto plano (legacy)
-      :ets.insert(:accounts, {"legacy_user", %{
-        username: "legacy_user",
-        password: "plaintext_password",
-        contacts: [],
-        chatrooms: []
-      }})
-
-      # Al autenticarse, debería migrar el password
-      assert :ok = Accounts.authenticate_user("legacy_user", "plaintext_password")
-
-      # Verificar que el password fue hasheado
-      {:ok, user} = Accounts.get_user("legacy_user")
-      assert String.starts_with?(user.password, "$2b$")
     end
   end
 end

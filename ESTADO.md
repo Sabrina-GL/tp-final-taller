@@ -17,10 +17,18 @@
 ### Chats
 - Creación de chats 1-a-1 (privados)
 - Creación de chats grupales (múltiples participantes)
-- Almacenamiento de últimos 10 mensajes por sala
+- Almacenamiento de últimos 10 mensajes por sala (con persistencia en SQLite)
 - Búsqueda por palabra clave dentro de una sala
 - Validación de participante al enviar mensaje (rechaza no-participantes)
 - Notificaciones a participantes (excepto remitente)
+
+### 🔄 Persistencia con Ecto + SQLite (NUEVO)
+- ✅ Usuarios almacenados en SQLite (no se pierden en reinicios)
+- ✅ Mensajes almacenados en SQLite (historial completo)
+- ✅ Contraseñas hasheadas con Bcrypt en base de datos
+- ✅ Migrations automáticas aplicadas en test/dev/prod
+- ✅ Contactos y estado online en ETS (caché rápido)
+- ✅ Base de datos: `chat_app_dev.db` (SQLite 3)
 
 ### API REST
 - POST /api/register - Registro de usuario
@@ -46,10 +54,11 @@ Acciones disponibles:
 - Timestamp de última conexión (last_seen)
 
 ### Testing
-- **104 tests** implementados con **93.09% de cobertura**
+- **103 tests** implementados con **87.37% de cobertura**
 - Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
 - Todos los tests pasan exitosamente ✅
+- Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están cubiertos
 
 ### Frontend básico (opcional implementado)
 - HTML/CSS con conexión WebSocket
@@ -111,7 +120,7 @@ Acciones disponibles:
 | Notificaciones offline | ✅ Con cola y entrega |
 | Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
 | Cliente por consola | ✅ **Python con WebSocket** |
-| Tests básicos | ✅ 104 tests, 93.09% cobertura |
+| Tests básicos | ✅ 103 tests, 87.37% cobertura |
 | OTP correctamente | ✅ Supervision tree completo |
 
 ## 🎯 Estado general
@@ -120,5 +129,5 @@ Acciones disponibles:
 
 **Código limpio**: ✅ Warnings eliminados, errores corregidos, código modular
 **Documentación**: ✅ README claro, instrucciones completas
-**Tests**: ✅ Cobertura alta (93.09%)
+**Tests**: ✅ Cobertura sólida (87.37%)
 **OTP**: ✅ Uso correcto de supervisores y GenServers

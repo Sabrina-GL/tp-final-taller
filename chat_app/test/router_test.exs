@@ -4,8 +4,12 @@ defmodule ChatWeb.RouterTest do
   import Plug.Conn
 
   setup do
-    # Clear ETS table before each test
-    case :ets.whereis(:accounts) do
+    # Clear database before each test
+    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
+    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+
+    # Clear in-memory metadata for accounts
+    case :ets.whereis(:accounts_metadata) do
       :undefined -> :ok
       tid -> :ets.delete_all_objects(tid)
     end

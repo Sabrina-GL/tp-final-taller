@@ -152,7 +152,7 @@ http://localhost:4000
 cd chat_app
 mix test
 ```
-→ Mostrará: 104 tests, 93.09% cobertura, todos ✅
+→ Mostrará: 103 tests, 87.37% cobertura, todos ✅
 
 ### Troubleshooting Durante la Demo
 
@@ -173,7 +173,7 @@ mix test
 2. **WebSocket bidireccional**: Cliente ↔ Servidor
 3. **Notificaciones real-time**: Sin polling
 4. **26Cola offline inteligente**: Guarda y entrega al reconectar
-5. **Tests robustos**: 93.09% cobertura
+5. **Tests robustos**: 87.37% cobertura
 6. **Cliente por consola funcional**: Todas las features accesibles
 
 ### Archivo de Log de Demo

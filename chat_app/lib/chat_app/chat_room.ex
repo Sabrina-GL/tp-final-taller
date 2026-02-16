@@ -1,5 +1,9 @@
 defmodule ChatApp.ChatRoom do
   use GenServer
+  import Ecto.Query
+
+  alias ChatApp.Repo
+  alias ChatApp.Schemas.Message
 
   # CLIENT API
 
@@ -30,32 +34,68 @@ defmodule ChatApp.ChatRoom do
   # SERVER
 
   def init(state) do
-    {:ok, state}
+    # Load messages from database on startup
+    messages = load_messages_from_db(state.chat_id)
+    new_state = %{state | messages: messages}
+    {:ok, new_state}
+  end
+
+  defp load_messages_from_db(chat_id) do
+    Message
+    |> where([m], m.chat_id == ^chat_id)
+    |> order_by([m], desc: m.timestamp)
+    |> limit(10)
+    |> Repo.all()
+    |> Enum.map(fn msg ->
+      %{
+        from: msg.from_user,
+        msg_content: msg.content,
+        timestamp: msg.timestamp
+      }
+    end)
+    |> Enum.reverse()
   end
 
   def handle_call({:add_message, from, text}, _from, state) do
     with true <- Enum.member?(state.participants, from),
          {:ok, _} <- ChatApp.Accounts.get_user(from) do
+      timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
       message = %{
         from: from,
         msg_content: text,
-        timestamp: DateTime.utc_now()
+        timestamp: timestamp
       }
 
-      messages =
-        [message | state.messages]
-        |> Enum.take(10)
+      # Persist message to database
+      db_changeset =
+        Message.changeset(%Message{}, %{
+          chat_id: state.chat_id,
+          from_user: from,
+          content: text,
+          timestamp: timestamp
+        })
 
-      new_state = %{state | messages: messages}
+      case Repo.insert(db_changeset) do
+        {:ok, _db_message} ->
+          messages =
+            [message | state.messages]
+            |> Enum.take(10)
 
-      # Notificar a todos los participantes excepto al remitente
-      Enum.each(state.participants, fn participant ->
-        if participant != from do
-          ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
-        end
-      end)
+          new_state = %{state | messages: messages}
 
-      {:reply, message, new_state}
+          # Notificar a todos los participantes excepto al remitente
+          Enum.each(state.participants, fn participant ->
+            if participant != from do
+              ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
+            end
+          end)
+
+          {:reply, message, new_state}
+
+        {:error, _changeset} ->
+          {:reply, {:error, :failed_to_save_message}, state}
+      end
     else
       false -> {:reply, {:error, :not_participant}, state}
       {:error, reason} -> {:reply, {:error, reason}, state}

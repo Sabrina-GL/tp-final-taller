@@ -2,16 +2,25 @@ defmodule ChatAppTest do
   use ExUnit.Case, async: false
 
   setup do
-    case :ets.whereis(:accounts) do
+    # Clear database before each test
+    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
+    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+
+    # Clear in-memory metadata for accounts
+    case :ets.whereis(:accounts_metadata) do
       :undefined -> :ok
       tid -> :ets.delete_all_objects(tid)
     end
 
     # Clean up any existing chat rooms in Registry
-    Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
-    |> Enum.each(fn pid ->
-      if Process.alive?(pid), do: Process.exit(pid, :kill)
-    end)
+    try do
+      Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
+      |> Enum.each(fn pid ->
+        if Process.alive?(pid), do: Process.exit(pid, :kill)
+      end)
+    rescue
+      _e -> :ok
+    end
 
     :ok
   end

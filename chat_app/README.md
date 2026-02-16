@@ -9,7 +9,7 @@ Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowb
 - Elixir >= 1.17
 - Erlang/OTP >= 25
 - Mix (incluido con Elixir)
-- SQLite3 (opcional, si se habilita persistencia)
+- SQLite3 (integrado con Ecto, necesario para persistencia de usuarios y mensajes)
 
 ## Inicio rapido
 
@@ -90,11 +90,14 @@ ChatApp.ChatRoom.search_messages(chat_id, "Hola")
 ## Modulos principales
 
 - `ChatApp.Application` - Punto de entrada OTP y supervision
-- `ChatApp.Accounts` - Registro y autenticacion de usuarios
+- `ChatApp.Accounts` - Registro y autenticacion de usuarios (con Ecto + SQLite)
 - `ChatApp.ChatManager` - Gestor central de conversaciones
-- `ChatApp.ChatRoom` - Logica de salas y mensajes
+- `ChatApp.ChatRoom` - Logica de salas y mensajes (con persistencia en SQLite)
 - `ChatApp.ActivityTracker` - Estado activo/inactivo
 - `ChatApp.ChatRoomSupervisor` - Supervisor dinamico de salas
+- `ChatApp.Repo` - Repositorio Ecto para SQLite
+- `ChatApp.Schemas.User` - Schema de usuarios
+- `ChatApp.Schemas.Message` - Schema de mensajes
 - `ChatWeb.Router` - Rutas HTTP y upgrade a WebSocket
 - `ChatWeb.SocketHandler` - Manejo de conexiones WebSocket
 

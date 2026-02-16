@@ -9,7 +9,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 - [chat_app/README.md](chat_app/README.md) - Guia tecnica del backend (API, modulos, configuracion, troubleshooting)
 - [CLIENT_README.md](CLIENT_README.md) - Guia completa del cliente por consola (Python)
 - [DEMO.md](DEMO.md) - Guia paso a paso para la demostración en vivo
-- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Análisis detallado de cobertura de tests (93.09%)
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Análisis detallado de cobertura de tests (87.37%)
 - [ARQUITECTURA.md](ARQUITECTURA.md) - Decisiones y diagrama general
 - [DESARROLLO.md](DESARROLLO.md) - Lineamientos de desarrollo
 - [ESTADO.md](ESTADO.md) - Resumen de lo implementado y lo pendiente
@@ -51,17 +51,19 @@ ESTADO.md          # Estado del proyecto
 ### Core ✅
 - ✅ Alta de usuarios con validaciones (username ≥3 chars, password ≥6 chars)
 - ✅ Autenticación con hash de password (Bcrypt)
+- ✅ Usuarios y credenciales persistidos en SQLite (Ecto ORM)
 - ✅ Estado de conexión (online/offline y last_seen)
 - ✅ Lista de contactos (agregar y listar)
 - ✅ Chats individuales (creación automática al agregar contacto)
 - ✅ Chats grupales (múltiples participantes)
 
 ### Mensajes ✅
-- ✅ Últimos 10 mensajes en cada conversación
+- ✅ Últimos 10 mensajes en cada conversación (persistidos en SQLite)
 - ✅ Búsqueda de mensajes por palabra clave
 - ✅ Validación de participantes (rechaza mensajes de no-participantes)
 - ✅ Notificaciones en tiempo real (excepto al remitente)
 - ✅ Cola de notificaciones offline con entrega automática al reconectar
+- ✅ Historial completo de mensajes en base de datos (no se pierden en reinicios)
 
 ### API y WebSocket ✅
 - ✅ REST: POST /api/register, POST /api/login
@@ -69,14 +71,15 @@ ESTADO.md          # Estado del proyecto
 - ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, create_group_chat, send_message
 
 ### Testing ✅
-- ✅ 104 tests unitarios y de integración
-- ✅ 93.09% de cobertura de código
+- ✅ 103 tests unitarios y de integración
+- ✅ 87.37% de cobertura de código (incluye schemas Ecto)
 - ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityTracker, Notifications, Router, SocketHandler
 
 ### Cobertura de tests (resumen) ✅
-- **Total**: 93.09% (104 tests)
+- **Total**: 87.37% (103 tests)
 - **SocketHandler**: 85.71% con tests unitarios directos de callbacks
-- **Módulos core**: >= 96% en Accounts, ChatManager, ActivityTracker, Notifications
+- **Módulos core**: >= 85% en Accounts, ChatManager, ActivityTracker, Notifications
+- **Persistencia**: Ecto + SQLite (Schemas User y Message)
 - Ejecutar: `mix test --cover`
 
 ### Opcionales
