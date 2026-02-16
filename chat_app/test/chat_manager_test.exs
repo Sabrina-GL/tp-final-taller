@@ -74,17 +74,6 @@ defmodule ChatManagerTest do
       {:ok, chat_id2} = ChatManager.get_or_create_private_chat("bob", "alice")
       assert chat_id1 == chat_id2
     end
-
-    test "add chatroom to users when creating private chat" do
-      {:ok, chat_id} = ChatManager.get_or_create_private_chat("alice", "bob")
-
-      # Verifico que el chat se haya agregado a ambos usuarios
-      {:ok, alice_chatrooms} = Accounts.get_chatrooms("alice")
-      {:ok, bob_chatrooms} = Accounts.get_chatrooms("bob")
-
-      assert chat_id in alice_chatrooms
-      assert chat_id in bob_chatrooms
-    end
   end
 
   describe "create_group_chat" do

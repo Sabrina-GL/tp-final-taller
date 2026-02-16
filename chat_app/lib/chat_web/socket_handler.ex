@@ -48,8 +48,16 @@ defmodule ChatWeb.SocketHandler do
         "get_status" ->
           user = data["user"] || state.user
           online? = ChatApp.ActivityTracker.is_online?(user)
-          last_seen = ChatApp.ActivityTracker.last_seen(user)
-          %{user: user, online: online?, last_seen: last_seen}
+
+          # last_seen returns {:ok, timestamp} or {:error, reason}
+          last_seen_value = case ChatApp.ActivityTracker.last_seen(user) do
+            {:ok, %DateTime{} = dt} -> DateTime.to_unix(dt)
+            {:ok, ts} when is_integer(ts) -> ts
+            {:error, _} -> nil
+            _ -> nil
+          end
+
+          %{user: user, online: online?, last_seen: last_seen_value}
 
         "add_contact" ->
           with :ok <- ChatApp.Accounts.add_contact(state.user, data["contact"]),

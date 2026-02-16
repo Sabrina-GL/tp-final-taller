@@ -9,6 +9,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 - [chat_app/README.md](chat_app/README.md) - Guia tecnica del backend (API, modulos, configuracion, troubleshooting)
 - [CLIENT_README.md](CLIENT_README.md) - Guia completa del cliente por consola (Python)
 - [DEMO.md](DEMO.md) - Guia paso a paso para la demostración en vivo
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Análisis detallado de cobertura de tests (93.09%)
 - [ARQUITECTURA.md](ARQUITECTURA.md) - Decisiones y diagrama general
 - [DESARROLLO.md](DESARROLLO.md) - Lineamientos de desarrollo
 - [ESTADO.md](ESTADO.md) - Resumen de lo implementado y lo pendiente
@@ -68,9 +69,15 @@ ESTADO.md          # Estado del proyecto
 - ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, create_group_chat, send_message
 
 ### Testing ✅
-- ✅ 59 tests unitarios y de integración
-- ✅ 74.68% de cobertura de código
-- ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityTracker, Notifications, Router
+- ✅ 104 tests unitarios y de integración
+- ✅ 93.09% de cobertura de código
+- ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityTracker, Notifications, Router, SocketHandler
+
+### Cobertura de tests (resumen) ✅
+- **Total**: 93.09% (104 tests)
+- **SocketHandler**: 85.71% con tests unitarios directos de callbacks
+- **Módulos core**: >= 96% en Accounts, ChatManager, ActivityTracker, Notifications
+- Ejecutar: `mix test --cover`
 
 ### Opcionales
 - ✅ Front-end HTML/CSS con WebSocket (básico funcional)

@@ -65,13 +65,13 @@ Usuario: bob
 #### 2. Ver chats creados (Alice)
 ```
 Opción: 3 (Ver chats)
-→ Mostrará: chat_alice_bob (creado automáticamente)
+→ Mostrará: alice:bob (creado automáticamente)
 ```
 
 #### 3. Enviar mensaje (Alice → Bob)
 ```
 Opción: 5 (Enviar mensaje)
-ID del chat: chat_alice_bob
+ID del chat: alice:bob
 Mensaje: Hola Bob, cómo estás?
 → Bob recibirá notificación inmediata
 ```
@@ -79,7 +79,7 @@ Mensaje: Hola Bob, cómo estás?
 #### 4. Ver mensajes (Bob)
 ```
 Opción: 6 (Ver mensajes)
-ID del chat: chat_alice_bob
+ID del chat: alice:bob
 → Mostrará el mensaje de Alice
 ```
 
@@ -106,7 +106,7 @@ Opción: 9 (Salir)
 #### 8. Enviar mensaje mientras Bob offline (Alice)
 ```
 Opción: 5
-ID: chat_alice_bob
+ID: alice:bob
 Mensaje: ¿Listo para la reunión?
 ```
 
@@ -119,7 +119,7 @@ Login nuevamente como bob
 #### 10. Buscar mensajes (Bob)
 ```
 Opción: 7 (Buscar)
-ID del chat: chat_alice_bob
+ID del chat: alice:bob
 Palabra: reunión
 → Encontrará el mensaje de Alice
 ```
@@ -152,7 +152,7 @@ http://localhost:4000
 cd chat_app
 mix test
 ```
-→ Mostrará: 59 tests, 74.68% cobertura, todos ✅
+→ Mostrará: 104 tests, 93.09% cobertura, todos ✅
 
 ### Troubleshooting Durante la Demo
 
@@ -173,7 +173,7 @@ mix test
 2. **WebSocket bidireccional**: Cliente ↔ Servidor
 3. **Notificaciones real-time**: Sin polling
 4. **26Cola offline inteligente**: Guarda y entrega al reconectar
-5. **Tests robustos**: 74.68% cobertura
+5. **Tests robustos**: 93.09% cobertura
 6. **Cliente por consola funcional**: Todas las features accesibles
 
 ### Archivo de Log de Demo

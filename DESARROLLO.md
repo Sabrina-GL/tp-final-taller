@@ -72,10 +72,10 @@ Broadcast a clientes conectados
 #### 3. Rastreo de Actividad
 ```
 Usuario conecta
-    ↓
+  ↓
 Registry registra conexión (UsersRegistry)
   ↓
-Al desconectar: falta implementar ActivityTracker
+ActivityTracker actualiza estado online/offline y last_seen
 ```
 
 ## Mejoras Futuras
@@ -154,7 +154,7 @@ ChatApp.ChatManager.send_file(chat_id, user, file_binary)
 mix test --cover
 ```
 
-Objetivo: >80% de cobertura
+Objetivo: >= 90% de cobertura
 
 ## Debugging
 

@@ -17,7 +17,7 @@ defmodule ChatApp.ChatRoomTest do
 
     Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
 
-    chat_id = "alice:bob"
+    chat_id = "alice:bob:#{System.unique_integer([:positive])}"
 
     {:ok, _pid} =
       ChatApp.ChatRoom.start_link(%{

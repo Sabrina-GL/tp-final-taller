@@ -97,5 +97,94 @@ defmodule ChatAppTest do
       {:ok, chat_id} = ChatApp.ChatManager.create_group_chat("bob", "grupo1", ["carol"])
       assert String.starts_with?(chat_id, "group:")
     end
+
+    test "get_messages from empty chat returns empty list" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      {:ok, messages} = ChatApp.ChatRoom.get_messages(chat_id)
+      assert messages == []
+    end
+
+    test "search_messages with no results returns empty" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "Hello there")
+
+      results = ChatApp.ChatRoom.search_messages(chat_id, "notfound")
+      assert results == []
+    end
+
+    test "search_messages is case-insensitive" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "HELLO WORLD")
+
+      results = ChatApp.ChatRoom.search_messages(chat_id, "hello")
+      assert length(results) == 1
+
+      results2 = ChatApp.ChatRoom.search_messages(chat_id, "WORLD")
+      assert length(results2) == 1
+    end
+
+    test "add_message handles long messages" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      long_text = String.duplicate("a", 1000)
+
+      message = ChatApp.ChatRoom.add_message(chat_id, "bob", long_text)
+      assert message.msg_content == long_text
+    end
+
+    test "multiple messages are ordered by timestamp" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "First")
+      Process.sleep(10)
+      ChatApp.ChatRoom.add_message(chat_id, "carol", "Second")
+      Process.sleep(10)
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "Third")
+
+      {:ok, messages} = ChatApp.ChatRoom.get_messages(chat_id)
+      assert length(messages) == 3
+      assert Enum.at(messages, 0).msg_content == "Third"
+      assert Enum.at(messages, 1).msg_content == "Second"
+      assert Enum.at(messages, 2).msg_content == "First"
+    end
+
+    test "get_or_create_private_chat is idempotent" do
+      {:ok, chat_id_1} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      {:ok, chat_id_2} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      {:ok, chat_id_3} = ChatApp.ChatManager.get_or_create_private_chat("carol", "bob")
+
+      assert chat_id_1 == chat_id_2
+      assert chat_id_1 == chat_id_3
+    end
+
+    test "group chat allows multiple members" do
+      ChatApp.Accounts.register_user("dave", "pass123")
+      {:ok, chat_id} = ChatApp.ChatManager.create_group_chat("bob", "biggroup", ["carol", "dave"])
+
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "msg1")
+      ChatApp.ChatRoom.add_message(chat_id, "carol", "msg2")
+      ChatApp.ChatRoom.add_message(chat_id, "dave", "msg3")
+
+      {:ok, messages} = ChatApp.ChatRoom.get_messages(chat_id)
+      assert length(messages) == 3
+    end
+
+    test "search_messages with empty query returns empty" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      ChatApp.ChatRoom.add_message(chat_id, "bob", "Some message")
+
+      results = ChatApp.ChatRoom.search_messages(chat_id, "")
+      assert length(results) == 1
+    end
+
+    test "chat room handles special characters in messages" do
+      {:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("bob", "carol")
+      special_text = "Hello @bob! Check #channel & <script>alert('test')</script>"
+
+      message = ChatApp.ChatRoom.add_message(chat_id, "bob", special_text)
+      assert message.msg_content == special_text
+
+      {:ok, messages} = ChatApp.ChatRoom.get_messages(chat_id)
+      assert Enum.at(messages, 0).msg_content == special_text
+    end
   end
 end

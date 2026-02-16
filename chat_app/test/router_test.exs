@@ -123,5 +123,116 @@ defmodule ChatWeb.RouterTest do
 
       assert conn.status == 404
     end
+
+    test "POST /api/register with short username fails" do
+      body = Jason.encode!(%{username: "ab", password: "pass123"})
+      conn =
+        conn(:post, "/api/register", body)
+        |> put_req_header("content-type", "application/json")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 400
+      assert conn.resp_body =~ "Registration failed"
+    end
+
+    test "POST /api/register with short password fails" do
+      body = Jason.encode!(%{username: "validuser", password: "12345"})
+      conn =
+        conn(:post, "/api/register", body)
+        |> put_req_header("content-type", "application/json")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 400
+      assert conn.resp_body =~ "Registration failed"
+    end
+
+    test "POST /api/login with non-existent user fails" do
+      body = Jason.encode!(%{username: "nonexistent", password: "pass123"})
+      conn =
+        conn(:post, "/api/login", body)
+        |> put_req_header("content-type", "application/json")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 401
+      assert conn.resp_body =~ "Login failed"
+    end
+
+    test "GET /api/status for non-existent user returns defaults" do
+      conn = conn(:get, "/api/status?user=nonexistent")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 200
+      response = Jason.decode!(conn.resp_body)
+      assert response["user"] == "nonexistent"
+      assert response["online"] == false
+    end
+
+    test "GET /index returns index.html" do
+      conn = conn(:get, "/index")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 200
+      assert conn.resp_body =~ "Chat"
+    end
+
+    test "PUT request returns 404" do
+      conn = conn(:put, "/api/register")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 404
+    end
+
+    test "DELETE request returns 404" do
+      conn = conn(:delete, "/api/user/test")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 404
+    end
+
+    test "PATCH request returns 404" do
+      conn = conn(:patch, "/api/user/test")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 404
+    end
+
+    test "POST /api/unknown endpoint returns 404" do
+      body = Jason.encode!(%{data: "test"})
+      conn =
+        conn(:post, "/api/unknown", body)
+        |> put_req_header("content-type", "application/json")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 404
+    end
+
+    test "GET request without query params to /api/status" do
+      conn = conn(:get, "/api/status")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 400
+      response = Jason.decode!(conn.resp_body)
+      assert response["error"] == "user parameter required"
+    end
+
+    test "POST /api/register with empty body fails" do
+      conn =
+        conn(:post, "/api/register", "")
+        |> put_req_header("content-type", "application/json")
+
+      assert_raise Plug.Conn.WrapperError, fn ->
+        ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+      end
+    end
+
+    test "POST /api/login with empty body fails" do
+      conn =
+        conn(:post, "/api/login", "")
+        |> put_req_header("content-type", "application/json")
+
+      assert_raise Plug.Conn.WrapperError, fn ->
+        ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+      end
+    end
   end
 end

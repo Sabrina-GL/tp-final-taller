@@ -46,8 +46,8 @@ Acciones disponibles:
 - Timestamp de última conexión (last_seen)
 
 ### Testing
-- **59 tests** implementados con **74.68% de cobertura**
-- Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications
+- **104 tests** implementados con **93.09% de cobertura**
+- Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
 - Todos los tests pasan exitosamente ✅
 
@@ -82,10 +82,9 @@ Acciones disponibles:
 
 ## 📋 Próximos pasos sugeridos (en orden de prioridad)
 
-### 1. Mejorar cobertura de tests
-- Agregar tests para SocketHandler (WebSocket)
-- Alcanzar >80% de cobertura total
-- Tests de integración end-to-end
+### 1. Mantener cobertura alta
+- Mantener >= 90% de cobertura total
+- Tests de integración end-to-end (opcional)
 
 ### 2. Persistencia (mejora robustez)
 - Implementar Ecto + SQLite para usuarios y mensajes
@@ -112,14 +111,14 @@ Acciones disponibles:
 | Notificaciones offline | ✅ Con cola y entrega |
 | Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
 | Cliente por consola | ✅ **Python con WebSocket** |
-| Tests básicos | ✅ 59 tests, 74.68% cobertura |
+| Tests básicos | ✅ 104 tests, 93.09% cobertura |
 | OTP correctamente | ✅ Supervision tree completo |
 
 ## 🎯 Estado general
 
-**El proyecto cumple con todos los requisitos obligatorios de features**, pero **falta el cliente por consola** que es explícitamente mencionado en la consigna. El frontend web HTML/CSS implementado es un opcional, pero no reemplaza el requisito del cliente por consola.
+**El proyecto cumple con todos los requisitos obligatorios de features**, incluyendo el **cliente por consola** que se solicita en la consigna.
 
 **Código limpio**: ✅ Warnings eliminados, errores corregidos, código modular
 **Documentación**: ✅ README claro, instrucciones completas
-**Tests**: ✅ Cobertura aceptable (74.68%)
+**Tests**: ✅ Cobertura alta (93.09%)
 **OTP**: ✅ Uso correcto de supervisores y GenServers

@@ -21,7 +21,7 @@ El sistema está construido con **Elixir + OTP** para máxima confiabilidad y co
 │      ChatWeb.Router (Plug + Cowboy)              │
 │  - GET /register, /login, /index                 │
 │  - POST /api/register, /api/login                │
-│  - GET /ws (upgrade WebSocket)                   │
+│  - GET /ws?user=usuario (upgrade WebSocket)      │
 └──────────────────┬───────────────────────────────┘
                    │
                    ▼
@@ -51,7 +51,7 @@ ChatApp.Accounts ChatManager Activity
         │                   │
         ▼                   ▼
    Registry            State
- (Users Online)      (In-Memory)
+ (UsersRegistry)     (In-Memory)
 ```
 
 ## Componentes Principales
@@ -90,8 +90,8 @@ ChatApp.Accounts ChatManager Activity
 - **Estado**:
   ```elixir
   %{
-    "alice" => %{password: hash, contacts: ["bob"], blocked: []},
-    "bob" => %{password: hash, contacts: ["alice"], blocked: []},
+    "alice" => %{password: hash, contacts: ["bob"], chat_rooms: [...]},
+    "bob" => %{password: hash, contacts: ["alice"], chat_rooms: [...]},
     ...
   }
   ```
@@ -106,8 +106,8 @@ ChatApp.Accounts ChatManager Activity
 - **Estado**:
   ```elixir
   %{
-    "chat_alice_bob" => ChatApp.ChatRoom(pid),
-    "group_project" => ChatApp.ChatRoom(pid),
+    "alice:bob" => ChatApp.ChatRoom(pid),
+    "group:project" => ChatApp.ChatRoom(pid),
     ...
   }
   ```
@@ -121,11 +121,11 @@ ChatApp.Accounts ChatManager Activity
 - **Estado**:
   ```elixir
   %{
-    id: "chat_alice_bob",
+    id: "alice:bob",
     participants: ["alice", "bob"],
     messages: [
-      %{from: "alice", content: "Hola", timestamp: ~N[...]},
-      %{from: "bob", content: "Hola Alice", timestamp: ~N[...]}
+      %{from: "alice", msg_content: "Hola", timestamp: ~U[...]},
+      %{from: "bob", msg_content: "Hola Alice", timestamp: ~U[...]}
     ]
   }
   ```
@@ -147,8 +147,8 @@ ChatApp.Accounts ChatManager Activity
 - **Estado**:
   ```elixir
   %{
-    "alice" => %{status: :online, last_activity: ~N[...]},
-    "bob" => %{status: :offline, last_activity: ~N[...]}
+    "alice" => %{status: :online, last_seen: ~U[...]},
+    "bob" => %{status: :offline, last_seen: ~U[...]}
   }
   ```
 
@@ -159,8 +159,8 @@ ChatApp.Accounts ChatManager Activity
   - Permitir broadcast rápido a usuarios específicos
 - **Ejemplo**:
   ```elixir
-  Registry.register(ChatApp.UsersOnlineRegistry, "alice", :connected)
-  {:ok, _} = Registry.lookup(ChatApp.UsersOnlineRegistry, "alice")
+  Registry.register(ChatApp.UsersRegistry, "alice", :connected)
+  {:ok, _} = Registry.lookup(ChatApp.UsersRegistry, "alice")
   ```
 
 ## Flujos de Datos
@@ -186,7 +186,7 @@ Responder al cliente
 ```
 Cliente envía JSON por WebSocket
   │
-  ├─ {"type": "message", "chat_id": "...", "content": "..."}
+  ├─ {"action": "send_message", "chat_id": "...", "msg_content": "..."}
   │
   ▼
 ChatWeb.SocketHandler.websocket_handle/2
@@ -194,7 +194,7 @@ ChatWeb.SocketHandler.websocket_handle/2
   ├─ Validar usuario
   │
   ▼
-ChatApp.ChatManager.send_message(chat_id, user, content)
+ChatApp.ChatRoom.add_message(chat_id, user, msg_content)
   │
   ├─ Obtener ChatRoom pid
   │
@@ -253,7 +253,7 @@ Notificar a contactos (futuro)
 ```elixir
 # ChatApp.Application
 children = [
-  {Registry, keys: :unique, name: UsersOnlineRegistry},
+  {Registry, keys: :unique, name: ChatApp.UsersRegistry},
   ChatApp.Accounts,
   ChatApp.ChatManager,
   ChatApp.ActivityTracker,

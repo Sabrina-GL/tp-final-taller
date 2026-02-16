@@ -79,47 +79,39 @@ Contraseña (mínimo 6 caracteres): alice123
 ### 2. Iniciar sesión
 ```
 Seleccione una opción: 2
-Usuario: alice
+ID del chat: alice:bob
 Contraseña: alice123
 ✅ Login exitoso. Bienvenido alice!
 ```
 
 ### 3. Agregar contacto
 ```
-Opción: 2
+ID del chat: alice:bob
 Usuario a agregar: bob
 👤 Agregando contacto: bob
 ```
 
 ### 4. Crear chat grupal
-```
+ID del chat: alice:bob
 Opción: 4
 Nombre del grupo: equipo
 Participantes (separados por coma): bob, charlie
 👥 Creando chat grupal: equipo
 ```
 
-### 5. Enviar mensaje
-```
-Opción: 5
-ID del chat: chat_alice_bob
-Mensaje: Hola Bob, cómo estás?
-📤 Enviando mensaje a chat_alice_bob...
-```
-
 ### 6. Ver mensajes
 ```
 Opción: 6
-ID del chat: chat_alice_bob
-📬 Obteniendo mensajes de chat_alice_bob...
+ID del chat: alice:bob
+📬 Obteniendo mensajes de alice:bob...
 ```
 
 ### 7. Buscar mensajes
 ```
 Opción: 7
-ID del chat: chat_alice_bob
+ID del chat: alice:bob
 Palabra clave a buscar: reunión
-🔍 Buscando 'reunión' en chat_alice_bob...
+🔍 Buscando 'reunión' en alice:bob...
 ```
 
 ### 8. Ver estado
@@ -140,7 +132,7 @@ Ejemplo:
 ```
 💬 MENSAJE NUEVO:
    De: bob
-   Chat: chat_alice_bob
+  Chat: alice:bob
    Contenido: Hola Alice!
 ```
 
@@ -184,7 +176,6 @@ Todas las acciones siguen el formato:
 ```
 
 Acciones soportadas:
-- `identify` - Identifica al usuario conectado
 - `get_contacts` - Lista contactos
 - `add_contact` - Agrega contacto
 - `get_chatrooms` - Lista chats
