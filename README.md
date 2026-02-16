@@ -6,14 +6,17 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 
 ## Documentacion
 
-- [chat_app/README.md](chat_app/README.md) - Guia tecnica del backend (API, modulos, configuracion, troubleshooting)
-- [CLIENT_README.md](CLIENT_README.md) - Guia completa del cliente por consola (Python)
-- [DEMO.md](DEMO.md) - Guia paso a paso para la demostración en vivo
-- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Análisis detallado de cobertura de tests (87.37%)
-- [ARQUITECTURA.md](ARQUITECTURA.md) - Decisiones y diagrama general
-- [DESARROLLO.md](DESARROLLO.md) - Lineamientos de desarrollo
-- [ESTADO.md](ESTADO.md) - Resumen de lo implementado y lo pendiente
-- [consigna-tp-final.txt](consigna-tp-final.txt) - Enunciado del trabajo
+### Para Usuario / Demostración
+- [DEMO.md](DEMO.md) - 🎬 Guía paso a paso para demostración en vivo
+- [CLIENT_README.md](CLIENT_README.md) - 🐍 Guía completa del cliente por consola (Python)
+
+### Para Desarrollador / Testing
+- [chat_app/README.md](chat_app/README.md) - 📚 Guía técnica del backend (API, módulos, configuración, troubleshooting)
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Análisis detallado de cobertura de tests (87.37%)
+- [ARQUITECTURA.md](ARQUITECTURA.md) - 🏗️ Decisiones de arquitectura y diagrama
+- [DESARROLLO.md](DESARROLLO.md) - 🛠️ Lineamientos de desarrollo
+- [ESTADO.md](ESTADO.md) - ✅ Resumen de features implementados vs pendientes
+- [consigna-tp-final.txt](consigna-tp-final.txt) - 📋 Enunciado original del trabajo
 
 ## Inicio rapido
 

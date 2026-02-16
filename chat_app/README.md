@@ -162,10 +162,19 @@ rm -f chat_app.db
 mix compile
 ```
 
-## Enlaces utiles
+## Enlaces útiles
 
-- [README principal](../README.md)
-- [ARQUITECTURA.md](../ARQUITECTURA.md)
-- [DESARROLLO.md](../DESARROLLO.md)
+### Documentación del Proyecto (nivel superior)
+- [README principal](../README.md) - Visión general y características
+- [DEMO.md](../DEMO.md) - Guía paso a paso para demostración en vivo
+- [CLIENT_README.md](../CLIENT_README.md) - Documentación del cliente Python
+- [COBERTURA_TESTS.md](../COBERTURA_TESTS.md) - Análisis de cobertura de tests (87.37%)
+
+### Documentación de Desarrollo
+- [ARQUITECTURA.md](../ARQUITECTURA.md) - Decisiones de arquitectura y diagrama
+- [DESARROLLO.md](../DESARROLLO.md) - Lineamientos de desarrollo
+- [ESTADO.md](../ESTADO.md) - Resumen de features implementados vs pendientes
+- [consigna-tp-final.txt](../consigna-tp-final.txt) - Enunciado original del trabajo
+
 - [ESTADO.md](../ESTADO.md)
 
