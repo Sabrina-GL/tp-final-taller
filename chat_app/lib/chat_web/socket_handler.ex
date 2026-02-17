@@ -27,12 +27,6 @@ defmodule ChatWeb.SocketHandler do
 
     reply =
       case data["action"] do
-        # "register" ->
-        #   ChatApp.Accounts.register_user(data["username"], data["password"])
-
-        # "login" ->
-        #   ChatApp.Accounts.authenticate_user(data["username"], data["password"])
-
         "get_contacts" ->
           case Accounts.get_contacts(state.user) do
             {:ok, contacts} -> %{contacts: contacts}
@@ -40,10 +34,6 @@ defmodule ChatWeb.SocketHandler do
           end
 
         "get_chatrooms" ->
-          # case Accounts.get_chatrooms(state.user) do
-          #   {:ok, chatrooms} -> %{chatrooms: chatrooms}
-          #   {:error, reason} -> %{error: reason}
-          # end
           case ChatManager.get_user_chatrooms(state.user) do
             {:error, reason} -> %{error: reason}
             chatrooms -> %{chatrooms: chatrooms}
@@ -70,13 +60,8 @@ defmodule ChatWeb.SocketHandler do
         "add_contact" ->
           with :ok <- Accounts.add_contact(state.user, data["contact"]),
                {:ok, contacts} <- Accounts.get_contacts(state.user),
-               # ChatManager.get_or_create_private_chat(state.user, data["contact"]),
                {:ok, _chat_id} <-
                  ChatManager.create_private_chat(state.user, data["contact"]),
-               #  :ok <- Accounts.add_chatroom(state.user, chat_id),
-               #  :ok <-
-               #    Accounts.add_chatroom(data["contact"], chat_id),
-               #  {:ok, chatrooms} <- Accounts.get_chatrooms(state.user) do
                chatrooms <- ChatManager.get_user_chatrooms(state.user) do
             %{
               status: :contact_added,

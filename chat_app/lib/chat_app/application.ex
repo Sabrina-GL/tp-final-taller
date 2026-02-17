@@ -8,8 +8,6 @@ defmodule ChatApp.Application do
       {Registry, keys: :unique, name: ChatApp.UsersRegistry},
       {Registry, keys: :unique, name: ChatApp.ChatRoomsRegistry},
       {Registry, keys: :unique, name: ChatApp.ActivityRegistry},
-      # ChatApp.Accounts,
-      # ChatApp.ChatManager,
       ChatApp.ActivitySupervisor,
       ChatApp.ChatRoomSupervisor,
       Plug.Cowboy.child_spec(
