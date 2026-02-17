@@ -16,8 +16,22 @@ defmodule ChatApp.Notifications do
         :ok
 
       [] ->
-        ChatApp.ActivityServer.add_pending(user, notification)
-        :offline
+        case Registry.lookup(ChatApp.ActivityRegistry, user) do
+          [{pid, _}] ->
+            if ChatApp.ActivityServer.is_online?(user) do
+              send(pid, notification)
+              :ok
+            else
+              ChatApp.ActivityServer.add_pending(user, notification)
+              :offline
+            end
+
+          [] ->
+            # Si no hay ActivityServer, arrancarlo y luego agregar pendiente
+            {:ok, _pid} = ChatApp.ActivityServer.start_link(user)
+            ChatApp.ActivityServer.add_pending(user, notification)
+            :offline
+        end
     end
   end
 end
