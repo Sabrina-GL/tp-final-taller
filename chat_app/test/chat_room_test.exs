@@ -1,11 +1,12 @@
 defmodule ChatApp.ChatRoomTest do
   use ExUnit.Case
-  alias ChatApp.{ChatRoom, Accounts}
+  alias ChatApp.{ChatRoomServer, Accounts, Repo}
 
   setup do
     # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+    Repo.delete_all(ChatApp.Schemas.User)
+    Repo.delete_all(ChatApp.Schemas.Message)
+    Repo.delete_all(ChatApp.Schemas.Chatroom)
 
     # Clear in-memory metadata for accounts
     case :ets.whereis(:accounts_metadata) do
@@ -20,12 +21,18 @@ defmodule ChatApp.ChatRoomTest do
     Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
     |> Enum.each(&Process.exit(&1, :kill))
 
-    Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
+    # Arrancar ActivityServer para cada usuario
+    for user <- ["alice", "bob"] do
+      case ChatApp.ActivitySupervisor.start_activity_server(user) do
+        {:ok, _pid} -> :ok
+        {:error, {:already_started, _pid}} -> :ok
+      end
+    end
 
     chat_id = "alice:bob:#{System.unique_integer([:positive])}"
 
     {:ok, _pid} =
-      ChatApp.ChatRoom.start_link(%{
+      ChatApp.ChatRoomServer.start_link(%{
         chat_id: chat_id,
         type: :private,
         participants: ["alice", "bob"],
@@ -37,13 +44,13 @@ defmodule ChatApp.ChatRoomTest do
 
   describe "add_message" do
     test "no permite agregar mensajes de usuarios que no son participantes", %{chat_id: chat_id} do
-      {:error, reason} = ChatRoom.add_message(chat_id, "charlie", "Hola a todos")
+      {:error, reason} = ChatRoomServer.add_message(chat_id, "charlie", "Hola a todos")
       assert reason == :not_participant
     end
 
     test "agrega un mensaje al chat room", %{chat_id: chat_id} do
-      msg = ChatRoom.add_message(chat_id, "alice", "Hola Bob")
-      {:ok, messages} = ChatRoom.get_messages(chat_id)
+      msg = ChatRoomServer.add_message(chat_id, "alice", "Hola Bob")
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
 
       assert msg.from == "alice"
       assert msg.msg_content == "Hola Bob"
@@ -53,10 +60,10 @@ defmodule ChatApp.ChatRoomTest do
 
     test "mantiene solo los últimos 10 mensajes", %{chat_id: chat_id} do
       for i <- 1..12 do
-        ChatRoom.add_message(chat_id, "alice", "Mensaje #{i}")
+        ChatRoomServer.add_message(chat_id, "alice", "Mensaje #{i}")
       end
 
-      {:ok, messages} = ChatRoom.get_messages(chat_id)
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
       assert length(messages) == 10
       assert Enum.at(messages, -1).msg_content == "Mensaje 3"
       assert Enum.at(messages, 0).msg_content == "Mensaje 12"
@@ -65,15 +72,15 @@ defmodule ChatApp.ChatRoomTest do
 
   describe "get_messages" do
     test "devuelve una lista vacía si no hay mensajes", %{chat_id: chat_id} do
-      {:ok, messages} = ChatRoom.get_messages(chat_id)
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
       assert messages == []
     end
 
     test "devuelve los mensajes en orden inverso al agregado", %{chat_id: chat_id} do
-      ChatRoom.add_message(chat_id, "alice", "Primer mensaje")
-      ChatRoom.add_message(chat_id, "bob", "Segundo mensaje")
+      ChatRoomServer.add_message(chat_id, "alice", "Primer mensaje")
+      ChatRoomServer.add_message(chat_id, "bob", "Segundo mensaje")
 
-      {:ok, messages} = ChatRoom.get_messages(chat_id)
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
 
       assert length(messages) == 2
       assert Enum.at(messages, 0).msg_content == "Segundo mensaje"
@@ -81,34 +88,48 @@ defmodule ChatApp.ChatRoomTest do
     end
   end
 
+  describe "get_room_state" do
+    test "devuelve el estado actual del chat room", %{chat_id: chat_id} do
+      ChatRoomServer.add_message(chat_id, "alice", "Hola Bob")
+      ChatRoomServer.add_message(chat_id, "bob", "Hola Alice")
+
+      {:ok, state} = ChatRoomServer.get_room_state(chat_id)
+
+      assert state.chat_id == chat_id
+      assert state.type == :private
+      assert Enum.sort(state.participants) == ["alice", "bob"]
+      assert length(state.messages) == 2
+    end
+  end
+
   describe "search_messages" do
     test "search_messages devuelve solo los mensajes que contienen la palabra clave", %{
       chat_id: chat_id
     } do
-      ChatRoom.add_message(chat_id, "alice", "hola juan")
-      ChatRoom.add_message(chat_id, "bob", "chau ana")
-      ChatRoom.add_message(chat_id, "alice", "hola de nuevo")
+      ChatRoomServer.add_message(chat_id, "alice", "hola juan")
+      ChatRoomServer.add_message(chat_id, "bob", "chau ana")
+      ChatRoomServer.add_message(chat_id, "alice", "hola de nuevo")
 
-      results = ChatRoom.search_messages(chat_id, "hola")
+      results = ChatRoomServer.search_messages(chat_id, "hola")
       assert length(results) == 2
     end
 
     test "search_messages devuelve una lista vacía si no hay coincidencias", %{chat_id: chat_id} do
-      ChatRoom.add_message(chat_id, "alice", "hola juan")
-      ChatRoom.add_message(chat_id, "bob", "chau ana")
+      ChatRoomServer.add_message(chat_id, "alice", "hola juan")
+      ChatRoomServer.add_message(chat_id, "bob", "chau ana")
 
-      results = ChatRoom.search_messages(chat_id, "adios")
+      results = ChatRoomServer.search_messages(chat_id, "adios")
       assert results == []
     end
 
     test "search_messages es case-insensitive", %{chat_id: chat_id} do
-      ChatRoom.add_message(chat_id, "alice", "Hola Juan")
-      ChatRoom.add_message(chat_id, "bob", "chau ana")
+      ChatRoomServer.add_message(chat_id, "alice", "Hola Juan")
+      ChatRoomServer.add_message(chat_id, "bob", "chau ana")
 
-      results = ChatRoom.search_messages(chat_id, "hola")
+      results = ChatRoomServer.search_messages(chat_id, "hola")
       assert length(results) == 1
 
-      results = ChatRoom.search_messages(chat_id, "HOLA")
+      results = ChatRoomServer.search_messages(chat_id, "HOLA")
       assert length(results) == 1
     end
   end

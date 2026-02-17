@@ -7,9 +7,10 @@ defmodule ChatApp.Application do
       ChatApp.Repo,
       {Registry, keys: :unique, name: ChatApp.UsersRegistry},
       {Registry, keys: :unique, name: ChatApp.ChatRoomsRegistry},
-      ChatApp.Accounts,
-      ChatApp.ChatManager,
-      ChatApp.ActivityTracker,
+      {Registry, keys: :unique, name: ChatApp.ActivityRegistry},
+      # ChatApp.Accounts,
+      # ChatApp.ChatManager,
+      ChatApp.ActivitySupervisor,
       ChatApp.ChatRoomSupervisor,
       Plug.Cowboy.child_spec(
         scheme: :http,

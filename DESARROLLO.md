@@ -35,11 +35,11 @@ iex -S mix
 ChatApp.Supervisor (one_for_one)
 ├── Registry (UsersRegistry)
 ├── Registry (ChatRoomsRegistry)
-├── ChatApp.Accounts (GenServer)
-├── ChatApp.ChatManager (GenServer)
-├── ChatApp.ActivityTracker (GenServer)
+├── Registry (ActivityRegistry)
+├── ChatApp.ActivitySupervisor (DynamicSupervisor)
+│   └── ChatApp.ActivityServer (GenServer) × N usuarios
 ├── ChatApp.ChatRoomSupervisor (DynamicSupervisor)
-│   └── ChatApp.ChatRoom (GenServer) × N salas
+│   └── ChatApp.ChatRoomServer (GenServer) × N salas
 └── Plug.Cowboy (servidor HTTP)
 ```
 
@@ -53,7 +53,9 @@ ChatWeb.Router.post("/api/register")
     ↓
 ChatApp.Accounts.register_user/2
     ↓
-Almacenado en estado del GenServer
+ChatApp.Repo.insert(User)  (persistencia en SQLite)
+    ↓
+{:ok, user}  (respuesta)
 ```
 
 #### 2. Mensaje en WebSocket
@@ -154,7 +156,7 @@ ChatApp.ChatManager.send_file(chat_id, user, file_binary)
 mix test --cover
 ```
 
-Estado actual: 87.37% (103 tests)
+Estado actual: 85.12% (103 tests)
 Objetivo original: >= 80% ✅ (superado)
 Nota: Cobertura se redujo ligeramente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos (85-100%)
 

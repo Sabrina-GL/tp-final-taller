@@ -21,14 +21,21 @@ pip install websocket-client requests
 
 ## ▶️ Ejecución
 
-1. **Iniciar el servidor Elixir** (en otra terminal):
+1.  **Base de datos** (solo la primera vez)
+
 ```bash
 cd chat_app
 mix deps.get
+mix ecto.create
+mix ecto.migrate
+```
+
+2. **Iniciar el servidor Elixir**:
+```bash
 iex -S mix
 ```
 
-2. **Ejecutar el cliente**:
+3. **Ejecutar el cliente** (en otra terminal):
 ```bash
 python3 client.py
 ```

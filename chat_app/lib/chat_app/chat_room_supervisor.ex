@@ -9,4 +9,9 @@ defmodule ChatApp.ChatRoomSupervisor do
   def init(:ok) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
+
+  def start_chatroom(state) do
+    child_spec = {ChatApp.ChatRoomServer, state}
+    DynamicSupervisor.start_child(__MODULE__, child_spec)
+  end
 end

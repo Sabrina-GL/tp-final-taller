@@ -1,13 +1,15 @@
 defmodule ChatApp.Schemas.User do
   use Ecto.Schema
   import Ecto.Changeset
+  alias ChatApp.Schemas.{Message, Contact}
 
   schema "users" do
-    field :username, :string
-    field :password_hash, :string
-    field :last_seen, :naive_datetime
+    field(:username, :string)
+    field(:password_hash, :string)
+    field(:last_seen, :naive_datetime)
 
-    has_many :messages, ChatApp.Schemas.Message, foreign_key: :user_id
+    has_many(:messages, Message, foreign_key: :user_id)
+    has_many(:contacts, Contact, foreign_key: :user_id)
 
     timestamps()
   end

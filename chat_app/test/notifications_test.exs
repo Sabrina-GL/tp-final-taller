@@ -1,10 +1,12 @@
 defmodule ChatApp.NotificationsTest do
   use ExUnit.Case, async: false
 
+  alias ChatApp.{Accounts, Notifications, ActivitySupervisor, Repo}
+
   setup do
     # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+    Repo.delete_all(ChatApp.Schemas.User)
+    Repo.delete_all(ChatApp.Schemas.Message)
 
     # Clear in-memory metadata for accounts
     case :ets.whereis(:accounts_metadata) do
@@ -13,8 +15,16 @@ defmodule ChatApp.NotificationsTest do
     end
 
     # Register test users
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
+    Accounts.register_user("alice", "pass123")
+    Accounts.register_user("bob", "pass123")
+
+    for user <- ["alice", "bob"] do
+      case ActivitySupervisor.start_activity_server(user) do
+        {:ok, _pid} -> :ok
+        {:error, {:already_started, _pid}} -> :ok
+      end
+    end
+
     :ok
   end
 
@@ -23,16 +33,18 @@ defmodule ChatApp.NotificationsTest do
       # Simulate online user by registering in UsersRegistry
       Registry.register(ChatApp.UsersRegistry, "alice", self())
 
-      ChatApp.Notifications.notify_new_chatroom("alice", "test_chat")
+      result = ChatApp.Notifications.notify_new_chatroom("alice", "test_chat")
 
+      assert result == :ok
       assert_receive {:new_chatroom, "test_chat"}, 1000
     end
 
-    test "queues notification via ActivityTracker when user offline" do
+    test "queues notification via ActivityServer when user offline" do
       # User not registered in Registry = offline
-      ChatApp.ActivityTracker.user_offline("bob")
+      ChatApp.ActivityServer.user_offline("bob")
+      Registry.unregister(ChatApp.UsersRegistry, "bob")
 
-      result = ChatApp.Notifications.notify_new_chatroom("bob", "test_chat")
+      result = Notifications.notify_new_chatroom("bob", "test_chat")
 
       # Should return :offline since user is not in registry
       assert result == :offline
@@ -44,7 +56,7 @@ defmodule ChatApp.NotificationsTest do
       Registry.register(ChatApp.UsersRegistry, "alice", self())
 
       message = %{from: "bob", msg_content: "Hello!", timestamp: DateTime.utc_now()}
-      ChatApp.Notifications.notify_new_message("alice", "test_chat", message)
+      Notifications.notify_new_message("alice", "test_chat", message)
 
       assert_receive {:new_message, "test_chat", ^message}, 1000
     end
@@ -52,7 +64,7 @@ defmodule ChatApp.NotificationsTest do
     test "returns :offline when user not registered" do
       message = %{from: "alice", msg_content: "Hi!", timestamp: DateTime.utc_now()}
 
-      result = ChatApp.Notifications.notify_new_message("bob", "test_chat", message)
+      result = Notifications.notify_new_message("bob", "test_chat", message)
 
       assert result == :offline
     end

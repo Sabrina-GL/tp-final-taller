@@ -2,11 +2,12 @@ defmodule ChatWeb.RouterTest do
   use ExUnit.Case, async: false
   import Plug.Test
   import Plug.Conn
+  alias ChatApp.{Accounts, ActivityServer, Repo}
 
   setup do
     # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
+    Repo.delete_all(ChatApp.Schemas.User)
+    Repo.delete_all(ChatApp.Schemas.Message)
 
     # Clear in-memory metadata for accounts
     case :ets.whereis(:accounts_metadata) do
@@ -15,8 +16,16 @@ defmodule ChatWeb.RouterTest do
     end
 
     # Register test users
-    ChatApp.Accounts.register_user("testuser", "pass123")
-    ChatApp.ActivityTracker.user_online("testuser")
+    Accounts.register_user("testuser", "pass123")
+
+    # Start ActivityServer for testuser
+    case ChatApp.ActivitySupervisor.start_activity_server("testuser") do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+    end
+
+    ActivityServer.user_online("testuser")
+
     :ok
   end
 
@@ -47,9 +56,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/register creates new user" do
       body = Jason.encode!(%{username: "newuser", password: "pass123"})
-       conn =
+
+      conn =
         conn(:post, "/api/register", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 200
@@ -59,9 +70,11 @@ defmodule ChatWeb.RouterTest do
     test "POST /api/register with existing user fails" do
       ChatApp.Accounts.register_user("existinguser", "pass123")
       body = Jason.encode!(%{username: "existinguser", password: "pass123"})
+
       conn =
         conn(:post, "/api/register", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
@@ -70,9 +83,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/login with valid credentials succeeds" do
       body = Jason.encode!(%{username: "testuser", password: "pass123"})
+
       conn =
         conn(:post, "/api/login", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 200
@@ -81,9 +96,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/login with invalid credentials fails" do
       body = Jason.encode!(%{username: "testuser", password: "wrongpass"})
+
       conn =
         conn(:post, "/api/login", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 401
@@ -102,7 +119,8 @@ defmodule ChatWeb.RouterTest do
 
     test "GET /api/status for offline user" do
       ChatApp.Accounts.register_user("offlineuser", "pass123")
-      ChatApp.ActivityTracker.user_offline("offlineuser")
+      # ChatApp.ActivityServer.user_offline("offlineuser")
+      Registry.unregister(ChatApp.UsersRegistry, "offlineuser")
       conn = conn(:get, "/api/status?user=offlineuser")
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
@@ -130,9 +148,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/register with short username fails" do
       body = Jason.encode!(%{username: "ab", password: "pass123"})
+
       conn =
         conn(:post, "/api/register", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
@@ -141,9 +161,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/register with short password fails" do
       body = Jason.encode!(%{username: "validuser", password: "12345"})
+
       conn =
         conn(:post, "/api/register", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
@@ -152,9 +174,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/login with non-existent user fails" do
       body = Jason.encode!(%{username: "nonexistent", password: "pass123"})
+
       conn =
         conn(:post, "/api/login", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 401
@@ -202,9 +226,11 @@ defmodule ChatWeb.RouterTest do
 
     test "POST /api/unknown endpoint returns 404" do
       body = Jason.encode!(%{data: "test"})
+
       conn =
         conn(:post, "/api/unknown", body)
         |> put_req_header("content-type", "application/json")
+
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 404

@@ -64,14 +64,17 @@ defmodule ChatWeb.Router do
     user = conn.params["user"]
 
     if user && user != "" do
-      online? = ChatApp.ActivityTracker.is_online?(user)
-      last_seen_result = ChatApp.ActivityTracker.last_seen(user)
+      online? = ChatApp.ActivityServer.is_online?(user)
 
-      # Extract datetime from result tuple
-      last_seen = case last_seen_result do
-        {:ok, datetime} -> datetime
-        {:error, _} -> nil
-      end
+      last_seen =
+        if online? do
+          ChatApp.ActivityServer.last_seen(user)
+        else
+          case ChatApp.Accounts.last_seen(user) do
+            {:ok, datetime} -> datetime
+            {:error, _} -> nil
+          end
+        end
 
       send_resp(
         conn,

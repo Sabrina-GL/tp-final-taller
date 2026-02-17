@@ -1,0 +1,84 @@
+defmodule ChatApp.ActivityServer do
+  use GenServer
+
+  # Client API
+  def start_link(username) do
+    GenServer.start_link(__MODULE__, username, name: via_tuple(username))
+  end
+
+  defp via_tuple(username) do
+    {:via, Registry, {ChatApp.ActivityRegistry, username}}
+    # {:via, Registry, {ChatApp.UsersRegistry, username}}
+  end
+
+  def user_online(username) do
+    GenServer.call(via_tuple(username), :user_online)
+  end
+
+  def user_offline(username) do
+    GenServer.call(via_tuple(username), :user_offline)
+  end
+
+  def is_online?(username) do
+    case Registry.lookup(ChatApp.ActivityRegistry, username) do
+      [{_pid, _}] ->
+        GenServer.call(via_tuple(username), :is_online)
+
+      [] ->
+        false
+    end
+  end
+
+  def last_seen(username) do
+    GenServer.call(via_tuple(username), :last_seen)
+  end
+
+  def add_pending(username, notification) do
+    GenServer.call(via_tuple(username), {:add_pending, notification})
+  end
+
+  def consume_pending(username) do
+    GenServer.call(via_tuple(username), :consume_pending)
+  end
+
+  def init(username) do
+    {:ok, %{username: username, status: :offline, last_seen: nil, pending: []}}
+  end
+
+  def handle_call(:user_online, _from, state) do
+    {:reply, :ok, %{state | status: :online, last_seen: DateTime.utc_now()}}
+  end
+
+  def handle_call(:user_offline, _from, state) do
+    {:reply, :ok, %{state | status: :offline, last_seen: DateTime.utc_now()}}
+  end
+
+  def handle_call(:is_online, _from, state) do
+    {:reply, state.status == :online, state}
+  end
+
+  def handle_call(:last_seen, _from, state) do
+    {:reply, state.last_seen, state}
+  end
+
+  def handle_call({:add_pending, notification}, _from, state) do
+    {:reply, :ok, %{state | pending: [notification | state.pending]}}
+  end
+
+  def handle_call(:consume_pending, _from, state) do
+    {:reply, Enum.reverse(state.pending), %{state | pending: []}}
+  end
+
+  def handle_info({:new_chatroom, _chat_id} = msg, state) do
+    {:noreply, %{state | pending: state.pending ++ [msg]}}
+  end
+
+  def handle_info({:new_message, _chat_id, _message} = msg, state) do
+    {:noreply, %{state | pending: state.pending ++ [msg]}}
+  end
+
+  def handle_info(msg, state) do
+    IO.puts("ActivityServer received unexpected message: #{inspect(msg)}")
+    {:noreply, state}
+  end
+end

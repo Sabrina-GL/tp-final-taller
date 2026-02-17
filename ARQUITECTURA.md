@@ -11,13 +11,15 @@ Sistema de chat en tiempo real con **Elixir + OTP**, WebSocket (Cowboy) y persis
 - `ChatWeb.SocketHandler` → Manejo de conexiones WebSocket
 - `ChatApp.Accounts` → Usuarios y autenticación (con Ecto)
 - `ChatApp.ChatManager` → Orquestación de chats
-- `ChatApp.ChatRoom` → Lógica de salas (memoria + SQLite)
-- `ChatApp.ActivityTracker` → Estado online/offline
+- `ChatApp.ChatRoomServer` → Lógica de salas (memoria + SQLite)
+- `ChatApp.ActivityServer` → Estado online/offline
 
 **Persistencia**:
 - Usuarios y credenciales en SQLite (Ecto)
 - Mensajes en SQLite (historial completo)
 - Estado online/offline en memoria (ETS + GenServer)
+- Contactos en SQLite (Ecto)
+- Salas de chat en SQLite (Ecto)
 
 ## Diagrama simplificado
 
@@ -28,7 +30,7 @@ Router (HTTP/WebSocket)
     ↓
 SocketHandler
     ↓
-ChatManager + ChatRoom + Accounts
+ChatManager + ChatRoomServer + Accounts + ActivityServer
     ↓
 SQLite (Ecto) + ETS (memoria)
 

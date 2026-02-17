@@ -4,9 +4,13 @@
 
 ### OTP y estructura
 - Supervisor principal con estrategia one_for_one
-- Registries para usuarios (UsersRegistry) y salas (ChatRoomsRegistry)
-- GenServers: Accounts, ChatManager, ChatRoom, ActivityTracker
-- DynamicSupervisor para salas de chat
+- Registries: UsersRegistry (conexiones WebSocket), ActivityRegistry (estado usuarios), ChatRoomsRegistry (salas activas)
+- NUEVO: ActivitySupervisor (DynamicSupervisor) para procesos de usuario
+- NUEVO: ActivityServer (GenServer) por usuario para estado online/offline y notificaciones pendientes
+- ChatRoomSupervisor (DynamicSupervisor) para salas de chat
+- ChatRoomServer (GenServer) por sala para mensajes
+- ChatManager -> NO es GenServer (módulo normal de orquestación)
+- Accounts -> NO es GenServer (módulo normal con Ecto)
 
 ### Usuarios y contactos
 - Registro y autenticación con hash de password (Bcrypt)
@@ -21,9 +25,12 @@
 - Búsqueda por palabra clave dentro de una sala
 - Validación de participante al enviar mensaje (rechaza no-participantes)
 - Notificaciones a participantes (excepto remitente)
+- Persistencia completa de mensajes en SQLite (tabla messages)
 
 ### 🔄 Persistencia con Ecto + SQLite (NUEVO)
 - ✅ Usuarios almacenados en SQLite (no se pierden en reinicios)
+- ✅ Contactos almacenados en SQLite (tabla contacts con relación user-contact)
+- ✅ Salas de chat almacenadas en SQLite (tabla chatrooms con campo participants array)
 - ✅ Mensajes almacenados en SQLite (historial completo)
 - ✅ Contraseñas hasheadas con Bcrypt en base de datos
 - ✅ Migrations automáticas aplicadas en test/dev/prod
@@ -71,13 +78,20 @@ Acciones disponibles:
 - Documentación: [CLIENT_README.md](CLIENT_README.md)
 
 ### Testing
-- **103 tests** implementados con **87.37% de cobertura**
+- **103 tests** implementados con **85.12% de cobertura**
 - Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
 - Todos los tests pasan exitosamente ✅
 - Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos
 
 ## 🔧 Mejoras recientes aplicadas
+- **Reestructuración OTP**: Separación de responsabilidades (ActivityServer por usuario, ChatRoomServer por sala)
+- **Eliminado**: Accounts como GenServer (ahora contexto Ecto)
+- **Eliminado**: ChatManager como GenServer (ahora módulo normal)
+- **Eliminado**: ActivityTracker (reemplazado por ActivitySupervisor + ActivityServer)
+- **Agregado**: ActivitySupervisor (DynamicSupervisor) para procesos de usuario
+- **Agregado**: Recreación automática de procesos desde DB
+- **Agregado**: Schema Chatroom con campo participants array
 - **Corregido**: Manejo de errores en send_message (retorna error si usuario no es participante)
 - **Corregido**: Notificaciones ahora excluyen al remitente
 - **Corregido**: Consistencia en notificaciones de create_group_chat (no notifica al creador)

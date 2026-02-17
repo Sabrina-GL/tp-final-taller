@@ -277,6 +277,12 @@ function sendMessage() {
         msg_content: message
     }));
 
+    renderMessage({
+        from: currentUser,
+        msg_content: message,
+        timestamp: Date.now()
+    });
+
     input.value = "";
 }
 
