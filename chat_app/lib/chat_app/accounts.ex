@@ -87,7 +87,7 @@ defmodule ChatApp.Accounts do
     with %User{id: user_id} <- Repo.get_by(User, username: username) do
       contacts =
         Contact
-        |> where([c], c.user_id == ^user_id)
+        |> where([c], c.user_id == ^user_id and c.status == "active")
         |> join(:inner, [c], u in User, on: c.contact_id == u.id)
         |> order_by([_c, u], asc: u.username)
         |> select([_c, u], u.username)
@@ -103,7 +103,19 @@ defmodule ChatApp.Accounts do
     if username == contact do
       {:error, :cannot_add_self}
     else
-      add_contact_to_db(username, contact)
+      with false <- interaction_blocked?(username, contact) do
+        add_contact_to_db(username, contact)
+      else
+        true -> {:error, :contact_blocked}
+      end
+    end
+  end
+
+  def block_contact(username, contact) do
+    if username == contact do
+      {:error, :cannot_block_self}
+    else
+      block_contact_in_db(username, contact)
     end
   end
 
@@ -125,10 +137,62 @@ defmodule ChatApp.Accounts do
     end
   end
 
+  defp block_contact_in_db(username, contact) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username),
+         %User{id: contact_id} <- Repo.get_by(User, username: contact) do
+      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
+        nil ->
+          %Contact{}
+          |> Contact.changeset(%{user_id: user_id, contact_id: contact_id, status: "blocked"})
+          |> Repo.insert()
+
+        relation ->
+          relation
+          |> Contact.changeset(%{status: "blocked"})
+          |> Repo.update()
+      end
+
+      :ok
+    else
+      nil -> {:error, :user_not_found}
+    end
+  end
+
   defp contact_already_added?(user_id, contact_id) do
     Contact
     |> where([c], c.user_id == ^user_id and c.contact_id == ^contact_id)
     |> Repo.exists?()
+  end
+
+  def interaction_blocked?(username1, username2) do
+    with %User{id: user1_id} <- Repo.get_by(User, username: username1),
+         %User{id: user2_id} <- Repo.get_by(User, username: username2) do
+      Contact
+      |> where(
+        [c],
+        (c.user_id == ^user1_id and c.contact_id == ^user2_id and c.status == "blocked") or
+          (c.user_id == ^user2_id and c.contact_id == ^user1_id and c.status == "blocked")
+      )
+      |> Repo.exists?()
+    else
+      _ -> false
+    end
+  end
+
+  def blocked_with_any?(username, participants) when is_list(participants) do
+    participants
+    |> Enum.reject(&(&1 == username))
+    |> Enum.any?(fn participant -> interaction_blocked?(username, participant) end)
+  end
+
+  def has_blocked_pair?(participants) when is_list(participants) do
+    pairs =
+      for a <- participants,
+          b <- participants,
+          a < b,
+          do: {a, b}
+
+    Enum.any?(pairs, fn {a, b} -> interaction_blocked?(a, b) end)
   end
 
   def update_last_seen(username) do

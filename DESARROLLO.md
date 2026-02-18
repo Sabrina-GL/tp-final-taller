@@ -77,7 +77,7 @@ Usuario conecta
   ↓
 Registry registra conexión (UsersRegistry)
   ↓
-ActivityTracker actualiza estado online/offline y last_seen
+ActivityServer actualiza estado online/offline y last_seen
 ```
 
 ## Mejoras Futuras
@@ -156,7 +156,7 @@ ChatApp.ChatManager.send_file(chat_id, user, file_binary)
 mix test --cover
 ```
 
-Estado actual: 85.12% (103 tests)
+Estado actual: 85.12% (133 tests)
 Objetivo original: >= 80% ✅ (superado)
 Nota: Cobertura se redujo ligeramente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos (85-100%)
 

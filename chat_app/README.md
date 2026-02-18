@@ -4,6 +4,21 @@
 
 Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowboy) para comunicacion bidireccional.
 
+## Features Implementadas
+
+### Básicas (Mandatorias)
+- ✅ Autenticación de usuarios (registro + login)
+- ✅ Chats privados entre dos usuarios
+- ✅ Chats grupales
+- ✅ Envío y recepción de mensajes en tiempo real
+- ✅ Historial de mensajes persistente (SQLite)
+- ✅ Con estatus online/offline
+- ✅ Búsqueda de mensajes
+
+### Opcionales (Implementadas)
+- ✅ **Bloqueo de contactos** - Bidireccional con validación en creación de chats
+- ✅ **Eliminación de mensajes** - Simple o en lote
+
 ## Requisitos
 
 - Elixir >= 1.17
@@ -49,7 +64,7 @@ Conectar:
 ws://localhost:4000/ws?user=username
 ```
 
-Mensajes soportados:
+Mensajes soportados (JSON):
 ```json
 {
   "action": "send_message",
@@ -58,33 +73,63 @@ Mensajes soportados:
 }
 ```
 
-Acciones disponibles:
-- get_contacts
-- get_chatrooms
-- get_messages
-- get_status
-- add_contact
-- create_group_chat
-- send_message
+### Acciones disponibles
+
+#### Gestión de contactos
+- `get_contacts` - Obtiene lista de contactos
+- `add_contact` - Añade un nuevo contacto
+- `block_contact` - Bloquea la comunicación con un usuario (bidireccional)
+
+#### Gestión de chats
+- `get_chatrooms` - Obtiene lista de chats
+- `create_group_chat` - Crea chat grupal (rechaza si hay contactos bloqueados)
+- `get_status` - Obtiene estado de usuarios
+
+#### Manejo de mensajes
+- `get_messages` - Obtiene historial de un chat
+- `send_message` - Envía mensaje (falla si remitente está bloqueado)
+- `delete_message` - Borra un mensaje por ID
+- `delete_messages` - Borra múltiples mensajes
+
+#### Búsqueda
+- `search_messages` - Busca mensajes que contengan una palabra
+
+#### Notificaciones offline
+- Si el usuario está conectado, la notificación se entrega en tiempo real por WebSocket.
+- Si el usuario está offline, la notificación se encola en `ActivityServer`.
+- Si no existe `ActivityServer` para ese usuario, se inicia vía `ActivitySupervisor` antes de encolar.
 
 ## Consola interactiva (IEx)
 
 ```elixir
-# Registrar usuario
+# Registrar usuarios
 ChatApp.Accounts.register_user("alice", "pass123")
 ChatApp.Accounts.register_user("bob", "pass456")
 
 # Crear chat privado
-{:ok, chat_id} = ChatApp.ChatManager.get_or_create_private_chat("alice", "bob")
+{:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
 
 # Enviar mensaje
-ChatApp.ChatRoom.add_message(chat_id, "alice", "Hola Bob!")
+msg = ChatApp.ChatRoomServer.add_message(chat_id, "alice", "Hola Bob!")
 
 # Obtener mensajes
-ChatApp.ChatRoom.get_messages(chat_id)
+ChatApp.ChatRoomServer.get_messages(chat_id)
 
 # Buscar mensajes
-ChatApp.ChatRoom.search_messages(chat_id, "Hola")
+ChatApp.ChatRoomServer.search_messages(chat_id, "Hola")
+
+# Bloquear contacto (bidireccional)
+ChatApp.Accounts.block_contact("alice", "bob")
+
+# Verificar si están bloqueados
+ChatApp.Accounts.interaction_blocked?("alice", "bob")  # => true
+ChatApp.Accounts.interaction_blocked?("bob", "alice")  # => true
+
+# Borrar un mensaje
+ChatApp.ChatRoomServer.delete_message(chat_id, "alice", msg.id)
+
+# Borrar múltiples mensajes
+ChatApp.ChatRoomServer.delete_messages(chat_id, "alice", [msg1.id, msg2.id])
 ```
 
 ## Modulos principales
@@ -93,7 +138,8 @@ ChatApp.ChatRoom.search_messages(chat_id, "Hola")
 - `ChatApp.Accounts` - Registro y autenticacion de usuarios (con Ecto + SQLite)
 - `ChatApp.ChatManager` - Gestor central de conversaciones
 - `ChatApp.ChatRoom` - Logica de salas y mensajes (con persistencia en SQLite)
-- `ChatApp.ActivityTracker` - Estado activo/inactivo
+- `ChatApp.ActivityServer` - Estado activo/inactivo y cola offline por usuario
+- `ChatApp.ActivitySupervisor` - Supervisor dinámico de ActivityServer
 - `ChatApp.ChatRoomSupervisor` - Supervisor dinamico de salas
 - `ChatApp.Repo` - Repositorio Ecto para SQLite
 - `ChatApp.Schemas.User` - Schema de usuarios
@@ -132,14 +178,38 @@ config :chat_app, ChatApp.Repo,
 ## Desarrollo y testing
 
 ```bash
+# Ejecutar todos los tests
 mix test
-mix test --trace
-mix test test/chat_app_test.exs
 
+# Con más detalles
+mix test --trace
+
+# Test específico
+mix test test/accounts_test.exs
+
+# Mostrar cobertura
+mix test --cover
+
+# Formatear código
 mix format
+
+# Compilar con warnings como errores
 mix compile --warnings-as-errors
+
+# Análisis estático
 mix dialyzer
 ```
+
+### Test Coverage
+
+- **133 tests** cubriendo:
+  - Autenticación y gestión de usuarios
+  - Creación y gestión de chats (privados y grupales)
+  - Mensajería y búsqueda
+  - **Bloqueo de contactos (bidireccional)**
+  - **Eliminación de mensajes (simple y lote)**
+  - API WebSocket
+  - Validaciones de schema
 
 ## Troubleshooting
 
@@ -168,7 +238,7 @@ mix compile
 - [README principal](../README.md) - Visión general y características
 - [DEMO.md](../DEMO.md) - Guía paso a paso para demostración en vivo
 - [CLIENT_README.md](../CLIENT_README.md) - Documentación del cliente Python
-- [COBERTURA_TESTS.md](../COBERTURA_TESTS.md) - Análisis de cobertura de tests (87.37%)
+- [COBERTURA_TESTS.md](../COBERTURA_TESTS.md) - Análisis de cobertura de tests (85.12%)
 
 ### Documentación de Desarrollo
 - [ARQUITECTURA.md](../ARQUITECTURA.md) - Decisiones de arquitectura y diagrama

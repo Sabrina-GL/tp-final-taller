@@ -19,6 +19,14 @@ defmodule ChatApp.ChatRoomServer do
     GenServer.call(via_tuple(chat_id), {:add_message, from, text})
   end
 
+  def delete_message(chat_id, requester, message_id) do
+    GenServer.call(via_tuple(chat_id), {:delete_message, requester, message_id})
+  end
+
+  def delete_messages(chat_id, requester, message_ids) do
+    GenServer.call(via_tuple(chat_id), {:delete_messages, requester, message_ids})
+  end
+
   def get_messages(chat_id) do
     ensure_room_started(chat_id)
     GenServer.call(via_tuple(chat_id), {:get_messages})
@@ -71,6 +79,7 @@ defmodule ChatApp.ChatRoomServer do
     |> Repo.all()
     |> Enum.map(fn msg ->
       %{
+        id: msg.id,
         from: msg.from_user,
         msg_content: msg.content,
         timestamp: msg.timestamp
@@ -81,7 +90,8 @@ defmodule ChatApp.ChatRoomServer do
 
   def handle_call({:add_message, from, text}, _from, state) do
     with true <- Enum.member?(state.participants, from),
-         {:ok, _} <- Accounts.get_user(from) do
+         {:ok, _} <- Accounts.get_user(from),
+         false <- Accounts.blocked_with_any?(from, state.participants) do
       timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
       message = %{
@@ -100,9 +110,11 @@ defmodule ChatApp.ChatRoomServer do
         })
 
       case Repo.insert(db_changeset) do
-        {:ok, _db_message} ->
+        {:ok, db_message} ->
+          message_with_id = Map.put(message, :id, db_message.id)
+
           messages =
-            [message | state.messages]
+            [message_with_id | state.messages]
             |> Enum.take(10)
 
           new_state = %{state | messages: messages}
@@ -110,18 +122,51 @@ defmodule ChatApp.ChatRoomServer do
           # Notificar a todos los participantes excepto al remitente
           Enum.each(state.participants, fn participant ->
             if participant != from do
-              ChatApp.Notifications.notify_new_message(participant, state.chat_id, message)
+              ChatApp.Notifications.notify_new_message(participant, state.chat_id, message_with_id)
             end
           end)
 
-          {:reply, message, new_state}
+          {:reply, message_with_id, new_state}
 
         {:error, _changeset} ->
           {:reply, {:error, :failed_to_save_message}, state}
       end
     else
       false -> {:reply, {:error, :not_participant}, state}
+      true -> {:reply, {:error, :contact_blocked}, state}
       {:error, reason} -> {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:delete_message, requester, message_id}, _from, state) do
+    with true <- Enum.member?(state.participants, requester),
+         %Message{} = message <- Repo.get(Message, message_id),
+         true <- message.chat_id == state.chat_id do
+      Repo.delete(message)
+
+      new_messages = Enum.reject(state.messages, fn msg -> msg.id == message_id end)
+      {:reply, :ok, %{state | messages: new_messages}}
+    else
+      false -> {:reply, {:error, :not_participant}, state}
+      nil -> {:reply, {:error, :message_not_found}, state}
+      _ -> {:reply, {:error, :message_not_found}, state}
+    end
+  end
+
+  def handle_call({:delete_messages, requester, message_ids}, _from, state) do
+    with true <- Enum.member?(state.participants, requester),
+         true <- is_list(message_ids) do
+      {deleted_count, _} =
+        Message
+        |> where([m], m.chat_id == ^state.chat_id and m.id in ^message_ids)
+        |> Repo.delete_all()
+
+      new_messages = Enum.reject(state.messages, fn msg -> msg.id in message_ids end)
+
+      {:reply, {:ok, deleted_count}, %{state | messages: new_messages}}
+    else
+      false -> {:reply, {:error, :not_participant}, state}
+      _ -> {:reply, {:error, :invalid_message_ids}, state}
     end
   end
 

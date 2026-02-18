@@ -25,10 +25,19 @@ defmodule ChatWeb.SocketHandlerBasicTest do
 
     Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
 
-    # Iniciar ActivityServer para cada usuario de test
-    {:ok, _} = ChatApp.ActivityServer.start_link("alice")
-    {:ok, _} = ChatApp.ActivityServer.start_link("bob")
-    {:ok, _} = ChatApp.ActivityServer.start_link("carol")
+    # Iniciar o reutilizar ActivityServer para cada usuario de test
+    case ChatApp.ActivityServer.start_link("alice") do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+    case ChatApp.ActivityServer.start_link("bob") do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+    case ChatApp.ActivityServer.start_link("carol") do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
 
     # Resetear estado inicial de los usuarios
     ChatApp.ActivityServer.consume_pending("alice")
@@ -101,6 +110,21 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert data["status"] == "contact_added"
     assert data["chat_opened"] == true
     assert data["chat_id"] == "alice:bob"
+  end
+
+  test "websocket_handle block_contact blocks user" do
+    ChatApp.Accounts.register_user("alice", "pass123")
+    ChatApp.Accounts.register_user("bob", "pass123")
+    state = %{user: "alice"}
+
+    msg = Jason.encode!(%{"action" => "block_contact", "contact" => "bob"})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "contact_blocked"
+    assert data["contact"] == "bob"
   end
 
   test "websocket_handle get_status returns online status" do
@@ -204,6 +228,30 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     data = Jason.decode!(reply)
     assert data["status"] == "ok"
     assert data["message"]["msg_content"] == "Hello"
+  end
+
+  test "websocket_handle delete_message deletes an existing message" do
+    ChatApp.Accounts.register_user("alice", "pass123")
+    ChatApp.Accounts.register_user("bob", "pass123")
+
+    {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
+    message = ChatApp.ChatRoomServer.add_message(chat_id, "alice", "Delete me")
+
+    state = %{user: "alice"}
+
+    msg =
+      Jason.encode!(%{
+        "action" => "delete_message",
+        "chat_id" => chat_id,
+        "message_id" => message.id
+      })
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "message_deleted"
+    assert data["message_id"] == message.id
   end
 
   test "websocket_info new_chatroom returns payload" do

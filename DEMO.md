@@ -100,12 +100,12 @@ Usuario: bob
 
 #### 7. Desconectar Bob
 ```
-Opción: 9 (Salir)
+Opción: 12 (Salir)
 ```
 
 #### 8. Enviar mensaje mientras Bob offline (Alice)
 ```
-Opción: 5
+Opción: 6
 ID: alice:bob
 Mensaje: ¿Listo para la reunión?
 ```
@@ -116,12 +116,19 @@ Login nuevamente como bob
 → Recibirás automáticamente los mensajes pendientes (cola offline)
 ```
 
-#### 10. Buscar mensajes (Bob)
+#### 10. Bloquear contacto (Bob bloquea Alice)
 ```
-Opción: 7 (Buscar)
+Opción: 3
+Usuario a bloquear: alice
+🚫 Bloqueando a: alice
+```
+
+#### 11. Eliminar mensaje (Alice)
+```
+Opción: 9
 ID del chat: alice:bob
-Palabra: reunión
-→ Encontrará el mensaje de Alice
+ID del mensaje a eliminar: 1
+→ El mensaje se elimina de la BD y memoria
 ```
 
 ### Features Demostradas ✅
@@ -130,10 +137,12 @@ Palabra: reunión
 - ✅ Autenticación
 - ✅ Estado de conexión (online/offline/last_seen)
 - ✅ Lista de contactos
+- ✅ **Bloqueo de contactos (bidireccional)**
 - ✅ Chats 1-a-1 (automáticos al agregar contacto)
 - ✅ Chats grupales
 - ✅ Últimos 10 mensajes
 - ✅ Búsqueda por keyword
+- ✅ **Eliminación de mensajes (simple y lote)**
 - ✅ Notificaciones en tiempo real
 - ✅ Cola de notificaciones offline
 
@@ -152,7 +161,7 @@ http://localhost:4000
 cd chat_app
 mix test
 ```
-→ Mostrará: 103 tests, 87.37% cobertura, todos ✅
+→ Mostrará: 133 tests, 85.12% cobertura, todos ✅
 
 ### Troubleshooting Durante la Demo
 
@@ -173,7 +182,7 @@ mix test
 2. **WebSocket bidireccional**: Cliente ↔ Servidor
 3. **Notificaciones real-time**: Sin polling
 4. **Cola offline inteligente**: Guarda y entrega al reconectar
-5. **Tests robustos**: 87.37% cobertura
+5. **Tests robustos**: 85.12% cobertura
 6. **Cliente por consola funcional**: Todas las features accesibles
 
 ---

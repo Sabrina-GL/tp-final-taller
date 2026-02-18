@@ -64,13 +64,16 @@ Al iniciar verás:
 ```
 1. Ver contactos              → Muestra tu lista de contactos
 2. Agregar contacto           → Agrega un usuario a tu lista
-3. Ver chats                  → Lista todos tus chats (1-1 y grupales)
-4. Crear chat grupal          → Crea un nuevo grupo
-5. Enviar mensaje             → Envía mensaje a un chat
-6. Ver mensajes de un chat    → Obtiene últimos 10 mensajes
-7. Buscar mensajes            → Busca por palabra clave en un chat
-8. Ver estado de un usuario   → Muestra online/offline/last_seen
-9. Salir                      → Cierra sesión
+3. Bloquear contacto          → Bloquea la comunicación con un usuario (bidireccional)
+4. Ver chats                  → Lista todos tus chats (1-a-1 y grupales)
+5. Crear chat grupal          → Crea un nuevo grupo
+6. Enviar mensaje             → Envía mensaje a un chat
+7. Ver mensajes de un chat    → Obtiene últimos 10 mensajes
+8. Buscar mensajes            → Busca por palabra clave en un chat
+9. Eliminar un mensaje        → Borra un mensaje por ID
+10. Eliminar múltiples mensajes → Borra varios mensajes de una vez
+11. Ver estado de un usuario  → Muestra online/offline/last_seen
+12. Salir                     → Cierra sesión
 ```
 
 ## 📝 Ejemplos de Uso
@@ -98,6 +101,14 @@ Usuario a agregar: bob
 👤 Agregando contacto: bob
 ```
 
+### 3b. Bloquear contacto
+```
+Opción: 3
+Usuario a bloquear: charlie
+🚫 Bloqueando a: charlie
+```
+*Nota: El bloqueo es bidireccional. Charlie tampoco podrá enviarte mensajes.*
+
 ### 4. Crear chat grupal
 ID del chat: alice:bob
 Opción: 4
@@ -115,15 +126,32 @@ ID del chat: alice:bob
 
 ### 7. Buscar mensajes
 ```
-Opción: 7
+Opción: 8
 ID del chat: alice:bob
 Palabra clave a buscar: reunión
 🔍 Buscando 'reunión' en alice:bob...
 ```
 
-### 8. Ver estado
+### 8. Eliminar un mensaje
 ```
-Opción: 8
+Opción: 9
+ID del chat: alice:bob
+ID del mensaje a eliminar: 42
+🗑️ Eliminando mensaje 42 de alice:bob...
+```
+*Nota: Solo puedes eliminar mensajes del chat del que eres participante.*
+
+### 9. Eliminar múltiples mensajes
+```
+Opción: 10
+ID del chat: alice:bob
+IDs de mensajes a eliminar (separados por coma): 40, 41, 42
+🗑️ Eliminando 3 mensajes de alice:bob...
+```
+
+### 10. Ver estado
+```
+Opción: 11
 Usuario: bob
 📊 Obteniendo estado de bob...
 ```
@@ -196,11 +224,13 @@ Acciones soportadas:
 
 ✅ Registro y login con validación  
 ✅ Lista de contactos (ver + agregar)  
+✅ **Bloqueo de contactos (bidireccional)**  
 ✅ Chats individuales automáticos  
 ✅ Chats grupales con múltiples participantes  
 ✅ Envío de mensajes  
 ✅ Ver últimos 10 mensajes  
 ✅ Búsqueda de mensajes por palabra clave  
+✅ **Eliminación de mensajes (simple y lote)**  
 ✅ Estado de usuarios (online/offline/last_seen)  
 ✅ Notificaciones en tiempo real  
 ✅ Cola de notificaciones offline  

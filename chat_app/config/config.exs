@@ -31,7 +31,7 @@ end
 # Test environment specific config
 if Mix.env() == :test do
   config :logger,
-    level: :warn
+    level: :warning
 
   config :chat_app, ChatApp.Repo,
     database: ":memory:",

@@ -12,7 +12,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 
 ### Para Desarrollador / Testing
 - [chat_app/README.md](chat_app/README.md) - 📚 Guía técnica del backend (API, módulos, configuración, troubleshooting)
-- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Análisis detallado de cobertura de tests (87.37%)
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Análisis detallado de cobertura de tests (85.12%)
 - [ARQUITECTURA.md](ARQUITECTURA.md) - 🏗️ Decisiones de arquitectura y diagrama
 - [DESARROLLO.md](DESARROLLO.md) - 🛠️ Lineamientos de desarrollo
 - [ESTADO.md](ESTADO.md) - ✅ Resumen de features implementados vs pendientes
@@ -86,26 +86,26 @@ ESTADO.md          # Estado del proyecto
 ### API y WebSocket ✅
 - ✅ REST: POST /api/register, POST /api/login
 - ✅ REST: GET /api/status?user=usuario (estado de conexión)
-- ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, create_group_chat, send_message
+- ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, block_contact, create_group_chat, send_message, search_messages, delete_message, delete_messages
 
 ### Testing ✅
-- ✅ 103 tests unitarios y de integración
-- ✅ 87.37% de cobertura de código (incluye schemas Ecto)
-- ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityTracker, Notifications, Router, SocketHandler
+- ✅ 133 tests unitarios y de integración
+- ✅ 85.12% de cobertura de código (incluye schemas Ecto)
+- ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityServer, Notifications, Router, SocketHandler
 
 ### Cobertura de tests (resumen) ✅
-- **Total**: 87.37% (103 tests)
+- **Total**: 85.12% (133 tests)
 - **SocketHandler**: 85.71% con tests unitarios directos de callbacks
-- **Módulos core**: >= 85% en Accounts, ChatManager, ActivityTracker, Notifications
+- **Módulos core**: >= 85% en Accounts, ChatManager, ActivityServer, Notifications
 - **Persistencia**: Ecto + SQLite (Schemas User y Message)
 - Ejecutar: `mix test --cover`
 
 ### Opcionales
 - ✅ Front-end HTML/CSS con WebSocket (básico funcional)
 - ✅ Cliente por consola interactivo (Python con WebSocket)
+- ✅ Bloquear contactos
+- ✅ Borrar mensajes
 - ⏳ Envío de imágenes/archivos
-- ⏳ Bloquear contactos
-- ⏳ Borrar mensajes
 - ⏳ Backups de mensajes
 
 ## Estado del proyecto

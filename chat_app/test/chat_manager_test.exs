@@ -79,6 +79,11 @@ defmodule ChatManagerTest do
       {:ok, chat_id2} = ChatManager.create_private_chat("bob", "alice")
       assert chat_id1 == chat_id2
     end
+
+    test "creating private chat with blocked contact returns error" do
+      assert :ok = Accounts.block_contact("alice", "bob")
+      assert {:error, :contact_blocked} = ChatManager.create_private_chat("alice", "bob")
+    end
   end
 
   describe "create_group_chat" do
@@ -128,6 +133,14 @@ defmodule ChatManagerTest do
 
       chatroom = Repo.get_by(ChatApp.Schemas.Chatroom, chat_id: chat_id)
       assert chatroom.participants == ["alice", "bob"]
+    end
+
+    test "create_group_chat with blocked participants returns error" do
+      Accounts.register_user("carol", "pass555")
+      assert :ok = Accounts.block_contact("bob", "carol")
+
+      assert {:error, :contact_blocked} =
+               ChatManager.create_group_chat("alice", "team_blocked", ["bob", "carol"])
     end
   end
 

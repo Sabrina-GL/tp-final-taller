@@ -3,7 +3,7 @@
 ## Estado Actual
 
 **Cobertura**: 85.12%  
-**Tests**: 103 tests aprobados  
+**Tests**: 133 tests aprobados  
 **Estado**: Todos los tests pasando ✅
 
 ## Desglose por Módulo
@@ -30,9 +30,9 @@
 
 - **Cobertura global**: 85.12% (reducida por nuevos módulos Ecto/Schemas, pero funcionalidad íntegra)
 - **SocketHandler** tiene cobertura con tests unitarios de callbacks (sin infraestructura WebSocket compleja).
-- **Módulos core** (ChatManager, ActivityTracker, Notifications) con cobertura excelente (96-100%).
+- **Módulos core** (ChatManager, ActivityServer, Notifications) con cobertura excelente (96-100%).
 - **Persistencia**: Nuevos módulos Ecto (Schemas User/Message/Contact/Chatroom, Repo) recién integrados.
-- **Tests**: 103 tests (eliminado test de migración de password legacy).
+- **Tests**: 133 tests (eliminado test de migración de password legacy).
 
 ## Cómo ejecutar
 

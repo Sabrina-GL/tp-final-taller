@@ -1,4 +1,6 @@
 defmodule ChatApp.Notifications do
+  alias ChatApp.{ActivityServer, ActivitySupervisor}
+
   def notify_new_chatroom(user, chat_id) do
     notification = {:new_chatroom, chat_id}
     notify_user(user, notification)
@@ -16,21 +18,22 @@ defmodule ChatApp.Notifications do
         :ok
 
       [] ->
-        case Registry.lookup(ChatApp.ActivityRegistry, user) do
-          [{pid, _}] ->
-            if ChatApp.ActivityServer.is_online?(user) do
-              send(pid, notification)
-              :ok
-            else
-              ChatApp.ActivityServer.add_pending(user, notification)
-              :offline
-            end
+        ensure_activity_server(user)
+        ActivityServer.add_pending(user, notification)
+        :offline
+    end
+  end
 
-          [] ->
-            # Si no hay ActivityServer, arrancarlo y luego agregar pendiente
-            {:ok, _pid} = ChatApp.ActivityServer.start_link(user)
-            ChatApp.ActivityServer.add_pending(user, notification)
-            :offline
+  defp ensure_activity_server(user) do
+    case Registry.lookup(ChatApp.ActivityRegistry, user) do
+      [{_pid, _}] ->
+        :ok
+
+      [] ->
+        case ActivitySupervisor.start_activity_server(user) do
+          {:ok, _pid} -> :ok
+          {:error, {:already_started, _pid}} -> :ok
+          _ -> :ok
         end
     end
   end

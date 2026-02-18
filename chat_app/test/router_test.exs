@@ -64,7 +64,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 200
-      assert conn.resp_body =~ "User registered successfully"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "ok"
     end
 
     test "POST /api/register with existing user fails" do
@@ -78,7 +79,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
-      assert conn.resp_body =~ "Registration failed"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "error"
     end
 
     test "POST /api/login with valid credentials succeeds" do
@@ -91,7 +93,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 200
-      assert conn.resp_body =~ "Login successful"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "ok"
     end
 
     test "POST /api/login with invalid credentials fails" do
@@ -104,7 +107,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 401
-      assert conn.resp_body =~ "Login failed"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "error"
     end
 
     test "GET /api/status for online user" do
@@ -156,7 +160,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
-      assert conn.resp_body =~ "Registration failed"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "error"
     end
 
     test "POST /api/register with short password fails" do
@@ -169,7 +174,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 400
-      assert conn.resp_body =~ "Registration failed"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "error"
     end
 
     test "POST /api/login with non-existent user fails" do
@@ -182,7 +188,8 @@ defmodule ChatWeb.RouterTest do
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
       assert conn.status == 401
-      assert conn.resp_body =~ "Login failed"
+      data = Jason.decode!(conn.resp_body)
+      assert data["status"] == "error"
     end
 
     test "GET /api/status for non-existent user returns defaults" do

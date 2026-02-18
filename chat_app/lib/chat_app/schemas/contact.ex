@@ -14,9 +14,9 @@ defmodule ChatApp.Schemas.Contact do
   @doc false
   def changeset(contact, attrs) do
     contact
-    |> cast(attrs, [:user_id, :contact_id])
+    |> cast(attrs, [:user_id, :contact_id, :status])
     |> validate_required([:user_id, :contact_id])
-    # |> validate_inclusion(:status, ["active", "blocked"])
+    |> validate_inclusion(:status, ["active", "blocked"])
     |> unique_constraint([:user_id, :contact_id])
   end
 

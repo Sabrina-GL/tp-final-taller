@@ -18,6 +18,18 @@ defmodule ChatApp.Application do
     ]
 
     opts = [strategy: :one_for_one, name: ChatApp.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        IO.puts("\n" <> String.duplicate("=", 50))
+        IO.puts("💬 Chat application started on port 4000")
+        IO.puts("   WebSocket: ws://localhost:4000/ws?user=username")
+        IO.puts("   HTTP: http://localhost:4000")
+        IO.puts(String.duplicate("=", 50) <> "\n")
+        {:ok, pid}
+
+      error ->
+        error
+    end
   end
 end

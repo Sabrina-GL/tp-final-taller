@@ -41,10 +41,10 @@ defmodule ChatWeb.Router do
 
     case ChatApp.Accounts.register_user(user, pass) do
       :ok ->
-        send_resp(conn, 200, "User registered successfully")
+        send_json_resp(conn, 200, %{"status" => "ok", "message" => "User registered successfully"})
 
       {:error, reason} ->
-        send_resp(conn, 400, "Registration failed: #{reason}")
+        send_json_resp(conn, 400, %{"status" => "error", "error" => to_string(reason)})
     end
   end
 
@@ -53,10 +53,10 @@ defmodule ChatWeb.Router do
 
     case ChatApp.Accounts.authenticate_user(user, pass) do
       :ok ->
-        send_resp(conn, 200, "Login successful")
+        send_json_resp(conn, 200, %{"status" => "ok", "message" => "Login successful"})
 
       {:error, reason} ->
-        send_resp(conn, 401, "Login failed: #{reason}")
+        send_json_resp(conn, 401, %{"status" => "error", "error" => to_string(reason)})
     end
   end
 
@@ -103,5 +103,11 @@ defmodule ChatWeb.Router do
 
   match _ do
     send_resp(conn, 404, "not found")
+  end
+
+  defp send_json_resp(conn, status, data) do
+    conn
+    |> Plug.Conn.put_resp_header("content-type", "application/json; charset=utf-8")
+    |> send_resp(status, Jason.encode!(data))
   end
 end

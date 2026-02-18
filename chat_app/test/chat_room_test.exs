@@ -68,6 +68,11 @@ defmodule ChatApp.ChatRoomTest do
       assert Enum.at(messages, -1).msg_content == "Mensaje 3"
       assert Enum.at(messages, 0).msg_content == "Mensaje 12"
     end
+
+    test "bloqueo impide enviar mensajes", %{chat_id: chat_id} do
+      assert :ok = Accounts.block_contact("bob", "alice")
+      assert {:error, :contact_blocked} = ChatRoomServer.add_message(chat_id, "alice", "Hola")
+    end
   end
 
   describe "get_messages" do
@@ -131,6 +136,48 @@ defmodule ChatApp.ChatRoomTest do
 
       results = ChatRoomServer.search_messages(chat_id, "HOLA")
       assert length(results) == 1
+    end
+  end
+
+  describe "delete_messages" do
+    test "delete_message borra un mensaje por id", %{chat_id: chat_id} do
+      msg = ChatRoomServer.add_message(chat_id, "alice", "Mensaje a borrar")
+      assert is_integer(msg.id)
+
+      assert :ok = ChatRoomServer.delete_message(chat_id, "alice", msg.id)
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
+      assert Enum.empty?(messages)
+    end
+
+    test "delete_messages borra múltiples mensajes", %{chat_id: chat_id} do
+      msg1 = ChatRoomServer.add_message(chat_id, "alice", "M1")
+      msg2 = ChatRoomServer.add_message(chat_id, "bob", "M2")
+      _msg3 = ChatRoomServer.add_message(chat_id, "alice", "M3")
+
+      assert {:ok, 2} = ChatRoomServer.delete_messages(chat_id, "alice", [msg1.id, msg2.id])
+
+      {:ok, messages} = ChatRoomServer.get_messages(chat_id)
+      assert length(messages) == 1
+      assert hd(messages).msg_content == "M3"
+    end
+
+    test "delete_message falla si requester no es participante", %{chat_id: chat_id} do
+      msg = ChatRoomServer.add_message(chat_id, "alice", "Mensaje")
+      assert {:error, :not_participant} = ChatRoomServer.delete_message(chat_id, "charlie", msg.id)
+    end
+
+    test "delete_message falla si mensaje no existe", %{chat_id: chat_id} do
+      assert {:error, :message_not_found} = ChatRoomServer.delete_message(chat_id, "alice", 9999)
+    end
+
+    test "delete_messages retorna 0 si no hay mensajes para borrar", %{chat_id: chat_id} do
+      _msg = ChatRoomServer.add_message(chat_id, "alice", "M1")
+      assert {:ok, 0} = ChatRoomServer.delete_messages(chat_id, "bob", [9999, 8888])
+    end
+
+    test "delete_messages falla si requester no es participante", %{chat_id: chat_id} do
+      msg = ChatRoomServer.add_message(chat_id, "alice", "Mensaje")
+      assert {:error, :not_participant} = ChatRoomServer.delete_messages(chat_id, "charlie", [msg.id])
     end
   end
 end

@@ -55,7 +55,8 @@ Acciones disponibles:
 
 ### Notificaciones y estado
 - Sistema de notificaciones en tiempo real vía WebSocket
-- Cola de notificaciones offline (almacenadas en ActivityTracker)
+- Cola de notificaciones offline (almacenadas en ActivityServer)
+- Si no existe proceso de actividad para el usuario, se crea vía ActivitySupervisor antes de encolar
 - Entrega automática de notificaciones pendientes al reconectar
 - Registro de estado online/offline por usuario
 - Timestamp de última conexión (last_seen)
@@ -73,13 +74,13 @@ Acciones disponibles:
 - Cliente interactivo en Python
 - Archivo: `client.py` (en raíz del proyecto)
 - WebSocket con todas las features
-- Menú interactivo con 9 opciones principales
+- Menú interactivo con 12 opciones principales
 - Notificaciones en tiempo real
 - Documentación: [CLIENT_README.md](CLIENT_README.md)
 
 ### Testing
-- **103 tests** implementados con **85.12% de cobertura**
-- Tests unitarios para: Accounts, ActivityTracker, ChatManager, ChatRoom, Notifications, SocketHandler
+- **133 tests** implementados con **85.12% de cobertura**
+- Tests unitarios para: Accounts, ActivityServer, ChatManager, ChatRoom, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
 - Todos los tests pasan exitosamente ✅
 - Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos
@@ -95,6 +96,7 @@ Acciones disponibles:
 - **Corregido**: Manejo de errores en send_message (retorna error si usuario no es participante)
 - **Corregido**: Notificaciones ahora excluyen al remitente
 - **Corregido**: Consistencia en notificaciones de create_group_chat (no notifica al creador)
+- **Corregido**: Notificaciones offline garantizan proceso ActivityServer antes de encolar pendientes
 - **Eliminado**: Código muerto (función `open_chat_room/2`)
 - **Eliminado**: Warnings de compilación (variable `pid` sin usar)
 
@@ -102,8 +104,6 @@ Acciones disponibles:
 
 ### Opcionales no implementados
 - ❌ Envío de archivos/imágenes
-- ❌ Bloqueo de contactos
-- ❌ Borrar mensajes
 - ❌ Backups de mensajes
 
 **NOTA**: Todos los requisitos obligatorios de la consigna están completos, incluyendo el cliente por consola.
@@ -114,15 +114,13 @@ Acciones disponibles:
 - Mantener >= 90% de cobertura total
 - Tests de integración end-to-end (opcional)
 
-### 2. Persistencia (mejora robustez)
-- Implementar Ecto + SQLite para usuarios y mensajes
-- Permite recuperar datos después de reiniciar servidor
-- Evita pérdida de información
+### 2. Robustez y observabilidad
+- Mejorar métricas y logging estructurado para flujos WebSocket
+- Añadir alertas de salud (estado de supervisores/procesos clave)
+- Incorporar tests de estrés para reconexiones y cola offline
 
 ### 3. Features opcionales
 - Envío de archivos (Base64 vía WebSocket)
-- Bloqueo de contactos
-- Borrar mensajes
 - Backups automáticos
 
 ## 📊 Estado vs Consigna
@@ -139,7 +137,7 @@ Acciones disponibles:
 | Notificaciones offline | ✅ Con cola y entrega |
 | Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
 | Cliente por consola | ✅ **Python con WebSocket** |
-| Tests básicos | ✅ 103 tests, 87.37% cobertura |
+| Tests básicos | ✅ 133 tests, 85.12% cobertura |
 | OTP correctamente | ✅ Supervision tree completo |
 
 ## 🎯 Estado general
@@ -148,5 +146,5 @@ Acciones disponibles:
 
 **Código limpio**: ✅ Warnings eliminados, errores corregidos, código modular
 **Documentación**: ✅ README claro, instrucciones completas
-**Tests**: ✅ Cobertura sólida (87.37%)
+**Tests**: ✅ Cobertura sólida (85.12%)
 **OTP**: ✅ Uso correcto de supervisores y GenServers

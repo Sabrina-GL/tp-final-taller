@@ -74,6 +74,12 @@ defmodule ChatWeb.SocketHandler do
             {:error, reason} -> %{error: reason}
           end
 
+        "block_contact" ->
+          case Accounts.block_contact(state.user, data["contact"]) do
+            :ok -> %{status: :contact_blocked, contact: data["contact"]}
+            {:error, reason} -> %{error: reason}
+          end
+
         "create_group_chat" ->
           with {:ok, chat_id} <-
                  ChatManager.create_group_chat(
@@ -98,6 +104,18 @@ defmodule ChatWeb.SocketHandler do
             message ->
               # Las notificaciones ya son manejadas por ChatRoomServer.add_message
               %{status: :ok, message: message}
+          end
+
+        "delete_message" ->
+          case ChatRoomServer.delete_message(data["chat_id"], state.user, data["message_id"]) do
+            :ok -> %{status: :message_deleted, message_id: data["message_id"]}
+            {:error, reason} -> %{status: :error, error: reason}
+          end
+
+        "delete_messages" ->
+          case ChatRoomServer.delete_messages(data["chat_id"], state.user, data["message_ids"] || []) do
+            {:ok, deleted_count} -> %{status: :messages_deleted, deleted_count: deleted_count}
+            {:error, reason} -> %{status: :error, error: reason}
           end
 
         _ ->

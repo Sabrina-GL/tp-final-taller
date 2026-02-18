@@ -209,6 +209,30 @@ class ChatClient:
         self.send_action("get_status", {"user": target_username})
         time.sleep(0.5)
     
+    def block_contact(self, contact_username):
+        """Bloquea a un usuario (bidireccional)"""
+        print(f"\n🚫 Bloqueando a: {contact_username}")
+        self.send_action("block_contact", {"contact": contact_username})
+        time.sleep(0.5)
+    
+    def delete_message(self, room_id, message_id):
+        """Elimina un mensaje por ID"""
+        print(f"\n🗑️  Eliminando mensaje {message_id} de {room_id}...")
+        self.send_action("delete_message", {
+            "room_id": room_id,
+            "message_id": message_id
+        })
+        time.sleep(0.3)
+    
+    def delete_messages(self, room_id, message_ids):
+        """Elimina múltiples mensajes"""
+        print(f"\n🗑️  Eliminando {len(message_ids)} mensajes de {room_id}...")
+        self.send_action("delete_messages", {
+            "room_id": room_id,
+            "message_ids": message_ids
+        })
+        time.sleep(0.3)
+    
     def disconnect(self):
         """Cierra la conexión"""
         if self.ws:
@@ -223,13 +247,16 @@ def print_menu():
     print("="*50)
     print("1.  Ver contactos")
     print("2.  Agregar contacto")
-    print("3.  Ver chats")
-    print("4.  Crear chat grupal")
-    print("5.  Enviar mensaje")
-    print("6.  Ver mensajes de un chat")
-    print("7.  Buscar mensajes en un chat")
-    print("8.  Ver estado de un usuario")
-    print("9.  Salir")
+    print("3.  Bloquear contacto")
+    print("4.  Ver chats")
+    print("5.  Crear chat grupal")
+    print("6.  Enviar mensaje")
+    print("7.  Ver mensajes de un chat")
+    print("8.  Buscar mensajes en un chat")
+    print("9.  Eliminar un mensaje")
+    print("10. Eliminar múltiples mensajes")
+    print("11. Ver estado de un usuario")
+    print("12. Salir")
     print("="*50)
 
 def print_welcome():
@@ -282,33 +309,54 @@ def main():
                         client.add_contact(contact)
                         
                     elif menu_opcion == "3":
-                        client.get_chatrooms()
+                        contact = input("Usuario a bloquear: ").strip()
+                        client.block_contact(contact)
                         
                     elif menu_opcion == "4":
+                        client.get_chatrooms()
+                        
+                    elif menu_opcion == "5":
                         name = input("Nombre del grupo: ").strip()
                         participants_str = input("Participantes (separados por coma): ").strip()
                         participants = [p.strip() for p in participants_str.split(",")]
                         client.create_group_chat(name, participants)
                         
-                    elif menu_opcion == "5":
+                    elif menu_opcion == "6":
                         room_id = input("ID del chat: ").strip()
                         content = input("Mensaje: ").strip()
                         client.send_message(room_id, content)
                         
-                    elif menu_opcion == "6":
+                    elif menu_opcion == "7":
                         room_id = input("ID del chat: ").strip()
                         client.get_messages(room_id)
                         
-                    elif menu_opcion == "7":
+                    elif menu_opcion == "8":
                         room_id = input("ID del chat: ").strip()
                         query = input("Palabra clave a buscar: ").strip()
                         client.search_messages(room_id, query)
                         
-                    elif menu_opcion == "8":
+                    elif menu_opcion == "9":
+                        room_id = input("ID del chat: ").strip()
+                        try:
+                            message_id = int(input("ID del mensaje a eliminar: ").strip())
+                            client.delete_message(room_id, message_id)
+                        except ValueError:
+                            print("❌ El ID del mensaje debe ser un número")
+                        
+                    elif menu_opcion == "10":
+                        room_id = input("ID del chat: ").strip()
+                        ids_str = input("IDs de mensajes a eliminar (separados por coma): ").strip()
+                        try:
+                            message_ids = [int(id.strip()) for id in ids_str.split(",")]
+                            client.delete_messages(room_id, message_ids)
+                        except ValueError:
+                            print("❌ Los IDs deben ser números separados por coma")
+                        
+                    elif menu_opcion == "11":
                         target_user = input("Usuario: ").strip()
                         client.get_status(target_user)
                         
-                    elif menu_opcion == "9":
+                    elif menu_opcion == "12":
                         client.disconnect()
                         break
                     else:

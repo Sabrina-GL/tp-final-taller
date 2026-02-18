@@ -8,7 +8,6 @@ defmodule ChatApp.ActivityServer do
 
   defp via_tuple(username) do
     {:via, Registry, {ChatApp.ActivityRegistry, username}}
-    # {:via, Registry, {ChatApp.UsersRegistry, username}}
   end
 
   def user_online(username) do

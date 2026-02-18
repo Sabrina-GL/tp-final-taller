@@ -103,6 +103,41 @@ defmodule AccountsTest do
       assert {:error, :contact_already_exists} = Accounts.add_contact("alice", "bob")
     end
 
+    test "block_contact blocks interaction and prevents adding contact" do
+      assert :ok = Accounts.block_contact("alice", "bob")
+      assert {:error, :contact_blocked} = Accounts.add_contact("alice", "bob")
+      assert Accounts.interaction_blocked?("alice", "bob")
+    end
+
+    test "block_contact rejects self-block" do
+      assert {:error, :cannot_block_self} = Accounts.block_contact("alice", "alice")
+    end
+
+    test "interaction_blocked? checks bidirectional blocking" do
+      Accounts.block_contact("alice", "bob")
+      assert Accounts.interaction_blocked?("alice", "bob")
+      assert Accounts.interaction_blocked?("bob", "alice")
+    end
+
+    test "blocked_with_any? detects if user is blocked with anyone in list" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.register_user("dave", "pass456")
+      Accounts.block_contact("alice", "bob")
+      assert Accounts.blocked_with_any?("alice", ["charlie", "bob", "dave"])
+      assert not Accounts.blocked_with_any?("alice", ["charlie", "dave"])
+    end
+
+    test "has_blocked_pair? detects blocked pairs in group" do
+      Accounts.register_user("charlie", "pass345")
+      assert not Accounts.has_blocked_pair?(["alice", "bob", "charlie"])
+      Accounts.block_contact("alice", "bob")
+      assert Accounts.has_blocked_pair?(["alice", "bob", "charlie"])
+    end
+
+    test "has_blocked_pair? returns false for single user" do
+      assert not Accounts.has_blocked_pair?(["alice"])
+    end
+
     test "multiple contacts can be added" do
       Accounts.register_user("charlie", "pass345")
       Accounts.register_user("dave", "pass456")
