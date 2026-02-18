@@ -1,4 +1,4 @@
-.PHONY: help dev dev-docker test compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
+.PHONY: help dev dev-docker test compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
 
 # Color para output
 CYAN := \033[0;36m
@@ -26,6 +26,11 @@ help:
 	@echo "$(GREEN)Base de Datos$(NC)"
 	@echo "  make db-reset         Reinicia BD PostgreSQL (drop + create + migrate)"
 	@echo "  make db-clean         Elimina BD PostgreSQL de desarrollo"
+	@echo "  make db-backup-docker Backup PostgreSQL (Docker) en backups/postgres/"
+	@echo "  make db-restore-docker FILE=... Restaura dump en DB (por defecto chat_app_restore)"
+	@echo "  make db-backup-local  Backup PostgreSQL local (sin Docker)"
+	@echo "  make db-restore-local FILE=... Restaura dump local en DB separada"
+	@echo "  make db-backup-verify-docker Prueba rápida de backup + restore"
 	@echo "  make demo-setup       Prepara BD para demo con instrucciones"
 	@echo ""
 	@echo "$(GREEN)Docker (opcional)$(NC)"
@@ -96,6 +101,52 @@ db-reset:
 db-clean:
 	@cd chat_app && MIX_ENV=dev mix ecto.drop || true
 	@echo "$(GREEN)✓ BD de desarrollo eliminada$(NC)"
+
+db-backup-docker:
+	@mkdir -p backups/postgres
+	@FILE=backups/postgres/chat_app_dev_$$(date +%Y%m%d_%H%M%S).dump; \
+	(echo "$(YELLOW)📦 Generando backup Docker en $$FILE...$(NC)" && \
+	((docker exec -e PGPASSWORD=postgres chat_postgres pg_dump -U postgres -d chat_app_dev -Fc --no-owner --no-privileges > "$$FILE") || \
+	 (sudo docker exec -e PGPASSWORD=postgres chat_postgres pg_dump -U postgres -d chat_app_dev -Fc --no-owner --no-privileges > "$$FILE"))) && \
+	echo "$(GREEN)✓ Backup generado: $$FILE$(NC)" && \
+	ls -1t backups/postgres/chat_app_dev_*.dump 2>/dev/null | tail -n +8 | xargs -r rm -f
+
+db-restore-docker:
+	@test -n "$(FILE)" || (echo "Uso: make db-restore-docker FILE=backups/postgres/<archivo.dump> [RESTORE_DB=chat_app_restore]" && exit 1)
+	@test -f "$(FILE)" || (echo "Archivo no encontrado: $(FILE)" && exit 1)
+	@DB_NAME=$${RESTORE_DB:-chat_app_restore}; \
+	echo "$(YELLOW)♻️ Restaurando $(FILE) en $$DB_NAME...$(NC)" && \
+	((docker exec -e PGPASSWORD=postgres chat_postgres createdb -U postgres $$DB_NAME 2>/dev/null || true) || \
+	 (sudo docker exec -e PGPASSWORD=postgres chat_postgres createdb -U postgres $$DB_NAME 2>/dev/null || true)) && \
+	((cat "$(FILE)" | docker exec -i -e PGPASSWORD=postgres chat_postgres pg_restore -U postgres -d $$DB_NAME --clean --if-exists --no-owner --no-privileges) || \
+	 (cat "$(FILE)" | sudo docker exec -i -e PGPASSWORD=postgres chat_postgres pg_restore -U postgres -d $$DB_NAME --clean --if-exists --no-owner --no-privileges)) && \
+	echo "$(GREEN)✓ Restore completado en $$DB_NAME$(NC)"
+
+db-backup-local:
+	@mkdir -p backups/postgres
+	@FILE=backups/postgres/chat_app_dev_$$(date +%Y%m%d_%H%M%S).dump; \
+	echo "$(YELLOW)📦 Generando backup local en $$FILE...$(NC)" && \
+	PGPASSWORD=postgres pg_dump -h localhost -p 5432 -U postgres -d chat_app_dev -Fc --no-owner --no-privileges > "$$FILE" && \
+	echo "$(GREEN)✓ Backup generado: $$FILE$(NC)" && \
+	ls -1t backups/postgres/chat_app_dev_*.dump 2>/dev/null | tail -n +8 | xargs -r rm -f
+
+db-restore-local:
+	@test -n "$(FILE)" || (echo "Uso: make db-restore-local FILE=backups/postgres/<archivo.dump> [RESTORE_DB=chat_app_restore]" && exit 1)
+	@test -f "$(FILE)" || (echo "Archivo no encontrado: $(FILE)" && exit 1)
+	@DB_NAME=$${RESTORE_DB:-chat_app_restore}; \
+	echo "$(YELLOW)♻️ Restaurando $(FILE) en $$DB_NAME (local)...$(NC)" && \
+	PGPASSWORD=postgres createdb -h localhost -p 5432 -U postgres $$DB_NAME 2>/dev/null || true; \
+	PGPASSWORD=postgres pg_restore -h localhost -p 5432 -U postgres -d $$DB_NAME --clean --if-exists --no-owner --no-privileges "$(FILE)" && \
+	echo "$(GREEN)✓ Restore completado en $$DB_NAME$(NC)"
+
+db-backup-verify-docker:
+	@$(MAKE) db-backup-docker
+	@LATEST=$$(ls -1t backups/postgres/chat_app_dev_*.dump | head -n 1); \
+	echo "$(YELLOW)🧪 Verificando backup con restore de $$LATEST...$(NC)"; \
+	$(MAKE) db-restore-docker FILE=$$LATEST RESTORE_DB=chat_app_restore_verify; \
+	((docker exec -e PGPASSWORD=postgres chat_postgres psql -U postgres -d chat_app_restore_verify -t -c "SELECT COUNT(*) FROM messages;" >/dev/null) || \
+	 (sudo docker exec -e PGPASSWORD=postgres chat_postgres psql -U postgres -d chat_app_restore_verify -t -c "SELECT COUNT(*) FROM messages;" >/dev/null)) && \
+	echo "$(GREEN)✓ Verificación OK: restore consultable (tabla messages accesible)$(NC)"
 
 demo-setup: db-reset
 	@echo ""

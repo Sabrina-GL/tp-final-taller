@@ -1,164 +1,67 @@
 # Estado del Proyecto - TP Final
 
-## ✅ Implementado (código actual)
+## Resumen ejecutivo
 
-### OTP y estructura
-- Supervisor principal con estrategia one_for_one
-- Registries: UsersRegistry (conexiones WebSocket), ActivityRegistry (estado usuarios), ChatRoomsRegistry (salas activas)
-- NUEVO: ActivitySupervisor (DynamicSupervisor) para procesos de usuario
-- NUEVO: ActivityServer (GenServer) por usuario para estado online/offline y notificaciones pendientes
-- ChatRoomSupervisor (DynamicSupervisor) para salas de chat
-- ChatRoomServer (GenServer) por sala para mensajes
-- ChatManager -> NO es GenServer (módulo normal de orquestación)
-- Accounts -> NO es GenServer (módulo normal con Ecto)
+- Requisitos obligatorios de la consigna: **completos**
+- Features opcionales implementadas: **5/5**
+- Pendiente: **ninguno**
 
-### Usuarios y contactos
-- Registro y autenticación con hash de password (Bcrypt)
-- Validaciones: username ≥3 chars, password ≥6 chars
-- Alta de contactos y listado
-- Creación automática de chat privado al agregar contacto
+## Cumplimiento vs consigna
 
-### Chats
-- Creación de chats 1-a-1 (privados)
-- Creación de chats grupales (múltiples participantes)
-- Almacenamiento de últimos 10 mensajes por sala (con persistencia en PostgreSQL)
-- Búsqueda por palabra clave dentro de una sala
-- Validación de participante al enviar mensaje (rechaza no-participantes)
-- Notificaciones a participantes (excepto remitente)
-- Persistencia completa de mensajes en PostgreSQL (tabla messages)
+| Feature | Tipo | Estado | Evidencia |
+|---|---|---|---|
+| Alta de usuarios | Obligatoria | ✅ Registro + login con validaciones | `README.md`, `DEMO.md` |
+| Estado de conexión | Obligatoria | ✅ Online/offline + last_seen | `README.md`, `CLIENT_README.md` |
+| Lista de contactos | Obligatoria | ✅ Agregar y listar | `CLIENT_README.md`, `DEMO.md` |
+| Chats 1-a-1 | Obligatoria | ✅ Creación automática al agregar contacto | `DEMO.md` |
+| Chats grupales | Obligatoria | ✅ Funcionales | `DEMO.md` |
+| Últimos 10 mensajes | Obligatoria | ✅ Por conversación | `README.md` |
+| Búsqueda de mensajes | Obligatoria | ✅ Por keyword | `CLIENT_README.md` |
+| Notificaciones offline | Obligatoria | ✅ Cola + entrega al reconectar | `DEMO.md`, `ARQUITECTURA.md` |
+| Cliente por consola | Obligatoria | ✅ Python/WebSocket | `CLIENT_README.md` |
+| OTP correctamente aplicado | Obligatoria | ✅ Supervisores, Registries, GenServers | `ARQUITECTURA.md` |
+| Documentación mínima | Obligatoria | ✅ README + docs de soporte | `README.md` |
+| Envío de archivos/imágenes | Opcional | ✅ Implementado (`send_file`) | `CLIENT_README.md`, `ARQUITECTURA.md` |
+| Frontend HTML/CSS | Opcional | ✅ Implementado | `README.md`, `DEMO.md` |
+| Bloqueo de contactos | Opcional | ✅ Implementado | `CLIENT_README.md`, `DEMO.md` |
+| Borrado de mensajes | Opcional | ✅ Implementado | `CLIENT_README.md`, `DEMO.md` |
+| Backups de mensajes | Opcional | ✅ Implementado (`pg_dump`/`pg_restore`) | `README.md`, `DESARROLLO.md` |
 
-### 🔄 Persistencia con Ecto + PostgreSQL (NUEVO)
-- ✅ Usuarios almacenados en PostgreSQL (no se pierden en reinicios)
-- ✅ Contactos almacenados en PostgreSQL (tabla contacts con relación user-contact)
-- ✅ Salas de chat almacenadas en PostgreSQL (tabla chatrooms con campo participants array)
-- ✅ Mensajes almacenados en PostgreSQL (historial completo)
-- ✅ Contraseñas hasheadas con Bcrypt en base de datos
-- ✅ Migrations automáticas aplicadas en test/dev/prod
-- ✅ Contactos y estado online en ETS (caché rápido)
-- ✅ Base de datos: `chat_app_dev` (PostgreSQL)
+## Features implementadas (resumen)
 
-### API REST
-- POST /api/register - Registro de usuario
-- POST /api/login - Autenticación
-- GET /api/status?user=username - Estado de conexión (online/offline, last_seen)
-- GET /register, /login, /index - Páginas HTML
+### Backend y OTP
+- Supervisor principal `one_for_one`
+- `ActivitySupervisor` + `ActivityServer` por usuario
+- `ChatRoomSupervisor` + `ChatRoomServer` por sala
+- `Accounts` y `ChatManager` como módulos de contexto
 
-### WebSocket
-Acciones disponibles:
-- `get_contacts` - Obtener lista de contactos
-- `get_chatrooms` - Obtener lista de chats del usuario
-- `get_messages` - Obtener mensajes de un chat
-- `get_status` - Consultar estado de un usuario
-- `add_contact` - Agregar contacto (crea chat automáticamente)
-- `block_contact` - Bloquear contacto (bidireccional)
-- `create_group_chat` - Crear chat grupal
-- `send_message` - Enviar mensaje (con manejo de errores)
-- `send_file` - Enviar archivo/imagen (Base64, max 5MB)
-- `search_messages` - Buscar mensajes por palabra clave
-- `delete_message` - Eliminar un mensaje
-- `delete_messages` - Eliminar múltiples mensajes
+### Persistencia
+- PostgreSQL con Ecto para usuarios, contactos, chats y mensajes
+- Historial completo de mensajes y recuperación tras reinicio
+- Backups y restore manuales con `pg_dump`/`pg_restore` (Docker y local)
+
+### Mensajería
+- Mensajes en tiempo real
+- Búsqueda por palabra
+- Eliminación simple y múltiple
+- Bloqueo bidireccional de contactos
 
 ### Archivos
-- Sistema de envío de archivos con Base64 over WebSocket
-- ChatApp.FileManager - Módulo para gestión de archivos (validación, almacenamiento, limpieza)
-- Límite de 5MB por archivo
-- Tipos permitidos: imágenes (png, jpeg, gif, webp), documentos (pdf, txt, doc, docx, xls, xlsx)
-- Almacenamiento en filesystem (`priv/uploads/`) con nombres UUID
-- Endpoint HTTP GET /uploads/:filename para descargas
-- Limpieza automática de archivos al eliminar mensajes
+- Envío de archivos/imágenes por WebSocket (`send_file`)
+- Base64 + límite 5MB + validación MIME
+- Descarga por `GET /uploads/:filename`
+- Limpieza automática al eliminar mensajes
 
-### Notificaciones y estado
-- Sistema de notificaciones en tiempo real vía WebSocket
-- Cola de notificaciones offline (almacenadas en ActivityServer)
-- Si no existe proceso de actividad para el usuario, se crea vía ActivitySupervisor antes de encolar
-- Entrega automática de notificaciones pendientes al reconectar
-- Registro de estado online/offline por usuario
-- Timestamp de última conexión (last_seen)
+### Clientes
+- Cliente consola: `client.py`
+- Cliente web básico: `priv/static/*`
 
-### 🖥️ Clientes Disponibles (DOS opciones)
+## Testing y calidad
 
-#### Cliente Web (HTML/CSS)
-- Interfaz gráfica en navegador
-- Acceso: `http://localhost:4000`
-- Páginas: registro, login, chat
-- Features: Contactos, chats 1-a-1, chats grupales, mensajes, búsqueda, notificaciones en tiempo real
-- Archivos: `priv/static/index.html`, `login.html`, `register.html`, `application.js`, CSS
+- Última corrida registrada: `133 tests, 0 failures`
+- Cobertura registrada: `81.77%` (umbral `80%`)
+- Fuente canónica y procedimiento: [COBERTURA_TESTS.md](COBERTURA_TESTS.md)
 
-#### Cliente por Consola (Python)
-- Cliente interactivo en Python
-- Archivo: `client.py` (en raíz del proyecto)
-- WebSocket con todas las features
-- Menú interactivo con 12 opciones principales
-- Notificaciones en tiempo real
-- Documentación: [CLIENT_README.md](CLIENT_README.md)
+## Pendiente
 
-### Testing
-- Suite de tests automatizada implementada
-- Cobertura verificable con `mix test --cover`
-- Tests unitarios para: Accounts, ActivityServer, ChatManager, ChatRoomServer, Notifications, SocketHandler
-- Tests de integración para: Router (HTTP endpoints)
-- `mix test`: pasa exitosamente ✅
-- `mix test --cover`: reporta cobertura con threshold configurado en 80% y su estado depende de la corrida actual
-- Nota: los valores exactos de cobertura y conteo pueden variar según la última corrida
-
-## 🔧 Mejoras recientes aplicadas
-- **Reestructuración OTP**: Separación de responsabilidades (ActivityServer por usuario, ChatRoomServer por sala)
-- **Eliminado**: Accounts como GenServer (ahora contexto Ecto)
-- **Eliminado**: ChatManager como GenServer (ahora módulo normal)
-- **Eliminado**: ActivityTracker (reemplazado por ActivitySupervisor + ActivityServer)
-- **Agregado**: ActivitySupervisor (DynamicSupervisor) para procesos de usuario
-- **Agregado**: Recreación automática de procesos desde DB
-- **Agregado**: Schema Chatroom con campo participants array
-- **Corregido**: Manejo de errores en send_message (retorna error si usuario no es participante)
-- **Corregido**: Notificaciones ahora excluyen al remitente
-- **Corregido**: Consistencia en notificaciones de create_group_chat (no notifica al creador)
-- **Corregido**: Notificaciones offline garantizan proceso ActivityServer antes de encolar pendientes
-- **Eliminado**: Código muerto (función `open_chat_room/2`)
-- **Eliminado**: Warnings de compilación (variable `pid` sin usar)
-
-## ⏳ Pendiente
-
-### Feature no implementado
-- ❌ Backups de mensajes
-
-**NOTA**: El proyecto implementa todos los requisitos obligatorios de la consigna, y todas las features opcionales excepto backups. Total: 15 de 16 features implementadas (94%).
-
-## 📋 Próximos pasos sugeridos (en orden de prioridad)
-
-### 1. Mantener cobertura alta
-- Mantener >= 90% de cobertura total
-- Tests de integración end-to-end (opcional)
-
-### 2. Robustez y observabilidad
-- Mejorar métricas y logging estructurado para flujos WebSocket
-- Añadir alertas de salud (estado de supervisores/procesos clave)
-- Incorporar tests de estrés para reconexiones y cola offline
-
-### 3. Feature pendiente
-- Backups automáticos de mensajes
-
-## 📊 Estado vs Consigna
-
-| Feature Consigna | Estado |
-|------------------|--------|
-| Alta de usuarios | ✅ Implementado con validaciones |
-| Estado de conexión | ✅ Online/offline + last_seen |
-| Lista de contactos | ✅ Agregar y listar |
-| Chats 1-a-1 | ✅ Funcionando |
-| Chats grupales | ✅ Funcionando |
-| Últimos 10 mensajes | ✅ Por sala |
-| Búsqueda en mensajes | ✅ Por keyword |
-| Notificaciones offline | ✅ Con cola y entrega |
-| Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
-| Cliente por consola | ✅ **Python con WebSocket** |
-| Tests básicos | ✅ Suite automatizada + cobertura ejecutable |
-| OTP correctamente | ✅ Supervision tree completo |
-
-## 🎯 Estado general
-
-**El proyecto cumple con todos los requisitos obligatorios de features**, incluyendo el **cliente por consola** que se solicita en la consigna.
-
-**Código limpio**: ✅ Warnings eliminados, errores corregidos, código modular
-**Documentación**: ✅ README claro, instrucciones completas
-**Tests**: ✅ Cobertura sólida (medible en cada ejecución)
-**OTP**: ✅ Uso correcto de supervisores y GenServers
+- ✅ Sin pendientes funcionales relevantes para la consigna

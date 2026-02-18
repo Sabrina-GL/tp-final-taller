@@ -1,168 +1,129 @@
 # Sistema de Chat con Elixir + OTP
 
-## Descripcion
+Sistema de chat cliente-servidor con backend en Elixir/OTP y comunicación en tiempo real por WebSocket (Cowboy).
 
-Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (Cowboy). Soporta chats individuales y grupales con comunicacion en tiempo real.
+## Resumen para tribunal
 
-## Documentacion
+- Requisitos obligatorios de la consigna: ✅ completos.
+- Features opcionales implementadas: ✅ 5/5.
+- Cliente de consola funcional con todas las features: ✅.
+- Arquitectura OTP con supervisores, registries y GenServers: ✅.
 
-### Para Usuario / Demostración
-- [DEMO.md](DEMO.md) - 🎬 Guía paso a paso para demostración en vivo
-- [CLIENT_README.md](CLIENT_README.md) - 🐍 Guía completa del cliente por consola (Python)
+## Documentación
 
-### Para Desarrollador / Testing
-- [chat_app/README.md](chat_app/README.md) - 📚 Guía técnica del backend (API, módulos, configuración, troubleshooting)
-- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Guía para ejecutar y reportar cobertura de tests
-- [ARQUITECTURA.md](ARQUITECTURA.md) - 🏗️ Decisiones de arquitectura y diagrama
-- [DESARROLLO.md](DESARROLLO.md) - 🛠️ Lineamientos de desarrollo
-- [ESTADO.md](ESTADO.md) - ✅ Resumen de features implementados vs pendientes
-- [consigna-tp-final.txt](consigna-tp-final.txt) - 📋 Enunciado original del trabajo
+### Uso y demo
+- [DEMO.md](DEMO.md) - Guion de demostración en vivo (consola + web)
+- [CLIENT_README.md](CLIENT_README.md) - Uso del cliente por consola
 
-## Inicio rapido
+### Técnica
+- [ARQUITECTURA.md](ARQUITECTURA.md) - Arquitectura OTP y flujos
+- [DESARROLLO.md](DESARROLLO.md) - Guía de desarrollo, debug y release
+- [ESTADO.md](ESTADO.md) - Estado de cumplimiento vs consigna
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Cobertura de tests
+- [consigna-tp-final.txt](consigna-tp-final.txt) - Enunciado original
 
-### 1. Setup inicial (Docker recomendado)
+## Inicio rápido (2 minutos)
+
+### Opción recomendada (Docker)
 ```bash
 cd tp-final-taller
-make setup-docker              # una vez (agrega usuario a grupo docker)
-newgrp docker                  # activa grupo docker sin relogin
-make setup-dockerized          # build + up + status
-```
-
-**Alternativa sin reiniciar sesión:**
-```bash
 make setup-docker
-make setup-dockerized-sudo     # usa sudo para arrancar sin relogin
-```
-
-### 2. Servidor y clientes
-```bash
-make docker-logs  # ver logs del backend en contenedor
+newgrp docker
+make setup-dockerized
+make docker-logs
 python3 client.py
 ```
 
-El servidor estará disponible en `http://localhost:4000` y WebSocket en `ws://localhost:4000/ws`.
-
-### 3. Alternativa local (sin Docker)
+Alternativa sin reiniciar sesión:
 ```bash
+make setup-docker
+make setup-dockerized-sudo
+```
+
+### Opción local (sin Docker)
+```bash
+cd tp-final-taller
 make setup
 make dev
-```
-
-Requiere Postgres local corriendo (por defecto en `localhost:5432`) y variables `POSTGRES_*`
-si no usas los valores por defecto (`postgres/postgres`, DB `chat_app_dev`).
-
-### 4. Cliente por Consola (Python)
-```bash
-cd tp-final-taller
 python3 client.py
 ```
 
-Sigue el menú interactivo para registrarte, iniciar sesión y usar el chat.
+Servidor:
+- HTTP: `http://localhost:4000`
+- WebSocket: `ws://localhost:4000/ws?user=username`
 
-**Documentación**: Ver [CLIENT_README.md](CLIENT_README.md)
+## Capacidades implementadas
 
-## Comandos Útiles
+- ✅ Autenticación y usuarios: registro/login con validaciones y hash Bcrypt.
+- ✅ Conectividad: estado online/offline con `last_seen`.
+- ✅ Contactos y chats: alta/listado, bloqueo bidireccional, chats 1-a-1 y grupales.
+- ✅ Mensajería: últimos 10 mensajes, búsqueda por keyword, borrado simple y múltiple.
+- ✅ Notificaciones: tiempo real + cola offline con entrega al reconectar.
+- ✅ Archivos: `send_file` con Base64 (máx. 5MB), validación MIME y descarga por `/uploads/:filename`.
+- ✅ Persistencia: PostgreSQL/Ecto para usuarios, contactos, chats y mensajes.
+- ✅ Backups de mensajes: backup/restore manual con `pg_dump`/`pg_restore` (Docker y local).
+- ✅ Clientes: consola Python y frontend web básico.
+
+## API (resumen)
+
+REST:
+- `POST /api/register`
+- `POST /api/login`
+- `GET /api/status?user=username`
+
+WebSocket (`/ws?user=username`):
+- Contactos/chats: `get_contacts`, `add_contact`, `block_contact`, `get_chatrooms`, `create_group_chat`, `get_status`.
+- Mensajes: `get_messages`, `send_message`, `send_file`, `delete_message`, `delete_messages`, `search_messages`.
+
+## Testing y calidad
 
 ```bash
-make help         # Muestra todos los comandos disponibles
-make setup        # Setup completo del proyecto
-make setup-dockerized # Setup completo usando Docker
-make demo         # Prepara demo (BD limpia + guía rápida)
-make test         # Ejecuta tests
-cd chat_app && mix test --cover  # Ejecuta tests con cobertura
-make db-reset     # Limpia BD y la reinicia (usa antes de demo)
-make reset-all    # Reinicio total (docker + Postgres + build + caches)
-make setup-docker # Configura permisos para docker sin sudo (requiere relogin)
-make docker-reset # Reinicia contenedores y volúmenes
-make clean        # Limpia artifacts de compilación
+make test
+cd chat_app && mix test --cover
 ```
 
-## Docker (recomendado para producción)
+Última corrida registrada (vigente a la fecha de actualización):
+- `133 tests, 0 failures`
+- Cobertura total: `81.77%` (umbral `80%`)
 
-El proyecto usa PostgreSQL para persistencia. Docker incluye el servicio `postgres`.
-Si no usas Docker, necesitas un Postgres local y variables `POSTGRES_*` configuradas.
+Fuente canónica de métricas y procedimiento: [COBERTURA_TESTS.md](COBERTURA_TESTS.md).
 
+## Backups (MVP)
+
+Docker:
 ```bash
-make setup-docker           # agrega usuario a grupo docker
-newgrp docker               # activa grupo sin relogin
-make setup-dockerized       # build + up + status
-make docker-logs            # ver logs del backend
-make docker-down            # detener contenedores
+make db-backup-docker
+make db-restore-docker FILE=backups/postgres/<archivo.dump>
+make db-backup-verify-docker
 ```
 
-**Alternativa sin reiniciar sesión:**
+Local (sin Docker):
 ```bash
-make setup-docker
-make docker-up-sudo         # usa sudo directamente
-make docker-logs-sudo       # ver logs con sudo
+make db-backup-local
+make db-restore-local FILE=backups/postgres/<archivo.dump>
 ```
 
-Si ves `permission denied /var/run/docker.sock`:
-- Usa `newgrp docker` para activar el grupo sin relogin
-- O usa comandos con `-sudo`: `make docker-up-sudo`
-- O ejecuta `make setup-docker`, cierra sesión y vuelve a entrar (solución permanente)
-
-### 3. Cliente Web (Navegador)
-El servidor sirve una interfaz web en:
-```
-http://localhost:4000
-```
-
-Abre en tu navegador y:
-1. Register (crear cuenta)
-2. Login (inicia sesión)
-3. Usa el chat desde la interfaz gráfica
-
-**Características**: Contactos, chats 1-a-1, chats grupales, mensajes, búsqueda, notificaciones
-
-## Estructura principal
-
-```
-chat_app/          # Backend Elixir + OTP
-ARQUITECTURA.md    # Arquitectura general
-DESARROLLO.md      # Guia de desarrollo
-ESTADO.md          # Estado del proyecto
-```
-
-## Caracteristicas implementadas
-
-- ✅ Alta de usuarios con validaciones (username ≥3 chars, password ≥6 chars)
-- ✅ Autenticación con hash de password (Bcrypt)
-- ✅ Usuarios y credenciales persistidos en PostgreSQL (Ecto ORM)
-- ✅ Estado de conexión (online/offline y last_seen)
-- ✅ Lista de contactos (agregar, listar, bloquear)
-- ✅ Chats individuales (creación automática al agregar contacto)
-- ✅ Chats grupales (múltiples participantes)
-- ✅ Últimos 10 mensajes en cada conversación (persistidos en PostgreSQL)
-- ✅ Búsqueda de mensajes por palabra clave
-- ✅ **Envío de archivos e imágenes** (Base64 over WebSocket, límite 5MB)
-- ✅ Validación de participantes (rechaza mensajes de no-participantes)
-- ✅ **Bloqueo de contactos** (bidireccional)
-- ✅ **Eliminación de mensajes** (simple y en lote)
-- ✅ Notificaciones en tiempo real (excepto al remitente)
-- ✅ Cola de notificaciones offline con entrega automática al reconectar
-- ✅ Historial completo de mensajes en base de datos (no se pierden en reinicios)
-- ✅ REST: POST /api/register, POST /api/login, GET /api/status
-- ✅ WebSocket: 12 acciones (get_contacts, add_contact, block_contact, create_group_chat, send_message, send_file, get_messages, search_messages, delete_message, delete_messages, get_chatrooms, get_status)
-- ✅ Suite de tests unitarios y de integración (133 tests)
-- ✅ Cobertura de código disponible con `mix test --cover` (~80%)
-- ✅ Front-end HTML/CSS con WebSocket (básico funcional)
-- ✅ Cliente por consola interactivo (Python con WebSocket)
-
-### Pendiente
-- ⏳ Backups de mensajes
+Notas:
+- Los dumps se guardan en `backups/postgres/` con timestamp.
+- Se conserva automáticamente el histórico de los últimos 7 backups.
+- El restore por defecto apunta a `chat_app_restore` (no pisa `chat_app_dev`).
 
 ## Estado del proyecto
 
-**Todos los requisitos obligatorios están implementados y funcionando.** El proyecto incluye:
-- ✅ Estructura OTP completa (Supervisores, GenServers, Registries)
-- ✅ WebSocket con Cowboy funcionando
-- ✅ Todas las features obligatorias de la consigna
-- ✅ Tests básicos con buena cobertura
-- ✅ Documentación completa
+- ✅ Requisitos obligatorios de la consigna: completos
+- ✅ Opcionales implementados: frontend web, bloqueo, borrado, envío de archivos y backups
+- ✅ Pendientes críticos: ninguno
 
-**El proyecto cumple TODOS los requisitos de la consigna**, incluyendo el cliente por consola en Python que permite interactuar con todas las features vía WebSocket.
+## Documentación del proyecto
+
+- [DEMO.md](DEMO.md) - Guion de demostración en vivo (consola + web).
+- [CLIENT_README.md](CLIENT_README.md) - Uso del cliente por consola.
+- [ARQUITECTURA.md](ARQUITECTURA.md) - Arquitectura OTP y flujos técnicos.
+- [DESARROLLO.md](DESARROLLO.md) - Guía de desarrollo, debugging y release.
+- [ESTADO.md](ESTADO.md) - Cumplimiento vs consigna con evidencia.
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - Cobertura y última corrida registrada.
+- [consigna-tp-final.txt](consigna-tp-final.txt) - Enunciado original.
 
 ## Licencia
 
-Trabajo practico para Taller de Programacion I - Catedra Manuel Camejo
+Trabajo práctico para Taller de Programación I - Cátedra Manuel Camejo.
