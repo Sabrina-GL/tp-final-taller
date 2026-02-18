@@ -21,7 +21,7 @@ if Mix.env() == :dev do
     level: :debug
 
   config :chat_app, ChatApp.Repo,
-    database: "chat_app_dev.db"
+    database: System.get_env("CHAT_APP_DB_PATH", "chat_app_dev.db")
 
   # Hot reload configuration
   config :chat_app,
@@ -44,7 +44,7 @@ if Mix.env() == :prod do
     level: :info
 
   config :chat_app, ChatApp.Repo,
-    database: "chat_app_prod.db"
+    database: System.get_env("CHAT_APP_DB_PATH", "chat_app_prod.db")
 end
 
 # Application config
@@ -59,5 +59,15 @@ config :chat_app,
   # Activity tracker settings
   activity_timeout: 300_000,  # 5 minutes in milliseconds
 
+  # DB migrations on app boot (dev/prod)
+  auto_migrate_on_start:
+    System.get_env("AUTO_MIGRATE_ON_START", "true") in ["true", "1", "yes"],
+
   # Database (if using Ecto in the future)
   repo: ChatApp.Repo
+
+if Mix.env() == :test do
+  config :chat_app,
+    auto_migrate_on_start: false,
+    websocket_port: 4001  # Usar puerto diferente en tests
+end

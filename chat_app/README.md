@@ -29,19 +29,64 @@ Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowb
 ## Inicio rapido
 
 ```bash
-mix deps.get
-mix compile
+cd ..
+make setup-docker         # agrega usuario a grupo docker
+newgrp docker             # activa grupo sin relogin
+make setup-dockerized     # levanta backend dockerizado
+make docker-logs          # ver logs del backend
 
-# Opcion 1: Consola interactiva
-iex -S mix
+# Alternativa sin reiniciar sesión:
+# make setup-docker && make setup-dockerized-sudo
 
-# Opcion 2: En background (sin consola)
-mix run --no-halt
+# O si prefieres sin Docker:
+# cd chat_app && mix run --no-halt
 ```
 
-Servidor disponible en:
+Nota: al iniciar, la app intenta correr migraciones automáticamente. Si vienes de una base vacía o borraste `chat_app_dev.db`, los comandos anteriores se encargan de eso. Servidor disponible en:
 - HTTP: http://localhost:4000
 - WebSocket: ws://localhost:4000/ws?user=username
+
+## Reiniciar la Base de Datos
+
+Durante desarrollo, puedes querer limpiar la BD de test/pruebas previas:
+
+```bash
+# Opción 1: Comando rápido desde raíz
+cd ..
+make db-reset
+
+# Opción 2: Manual desde chat_app
+cd chat_app
+rm chat_app_dev.db
+mix ecto.create
+mix ecto.migrate
+```
+
+Después, reinicia el servidor `make dev` y tendrás una base de datos completamente limpia sin usuarios ni mensajes.
+
+**Para preparar demo limpia**, usa:
+```bash
+make demo-setup    # Resetea BD + muestra instrucciones
+```
+
+## Docker (recomendado)
+
+Este backend usa SQLite para persistencia y en Docker se guarda en el volumen `chat_app_data`.
+Flujo recomendado:
+
+```bash
+cd ..
+make setup-docker        # agrega usuario a grupo docker
+newgrp docker            # activa grupo sin relogin
+make setup-dockerized    # build + up + status
+make docker-logs         # ver logs
+make docker-down         # detener contenedores
+```
+
+**Si aparece `permission denied /var/run/docker.sock`:**
+- Usa `newgrp docker` para activar el grupo sin relogin
+- O usa los comandos con `-sudo`: `make setup-dockerized-sudo`, `make docker-logs-sudo`, etc.
+- O ejecuta `make setup-docker`, cierra sesión y vuelve a entrar (solución permanente)
 
 ## API REST
 

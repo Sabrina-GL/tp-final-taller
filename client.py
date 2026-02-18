@@ -63,8 +63,9 @@ class ChatClient:
     def connect_websocket(self):
         """Establece conexión WebSocket"""
         try:
+            ws_url = f"{self.ws_url}?user={self.username}"
             self.ws = websocket.WebSocketApp(
-                self.ws_url,
+                ws_url,
                 on_message=self.on_message,
                 on_error=self.on_error,
                 on_close=self.on_close,
@@ -88,8 +89,7 @@ class ChatClient:
     def on_open(self, ws):
         """Callback cuando se abre la conexión WebSocket"""
         self.connected = True
-        # Enviar identificación
-        self.send_action("identify", {"username": self.username})
+        # El servidor ya identifica al usuario desde ?user=username en la URL
     
     def on_message(self, ws, message):
         """Callback cuando llega un mensaje del servidor"""
@@ -174,7 +174,7 @@ class ChatClient:
         print(f"\n👥 Creando chat grupal: {name}")
         print(f"   Participantes: {', '.join(participants)}")
         self.send_action("create_group_chat", {
-            "name": name,
+            "group_name": name,
             "participants": participants
         })
         time.sleep(0.5)
@@ -183,22 +183,22 @@ class ChatClient:
         """Envía un mensaje a un chat"""
         print(f"\n📤 Enviando mensaje a {room_id}...")
         self.send_action("send_message", {
-            "room_id": room_id,
-            "content": content
+            "chat_id": room_id,
+            "msg_content": content
         })
         time.sleep(0.3)
     
     def get_messages(self, room_id):
         """Obtiene los últimos mensajes de un chat"""
         print(f"\n📬 Obteniendo mensajes de {room_id}...")
-        self.send_action("get_messages", {"room_id": room_id})
+        self.send_action("get_messages", {"chat_id": room_id})
         time.sleep(0.5)
     
     def search_messages(self, room_id, query):
         """Busca mensajes por palabra clave en un chat"""
         print(f"\n🔍 Buscando '{query}' en {room_id}...")
         self.send_action("search_messages", {
-            "room_id": room_id,
+            "chat_id": room_id,
             "query": query
         })
         time.sleep(0.5)
@@ -219,7 +219,7 @@ class ChatClient:
         """Elimina un mensaje por ID"""
         print(f"\n🗑️  Eliminando mensaje {message_id} de {room_id}...")
         self.send_action("delete_message", {
-            "room_id": room_id,
+            "chat_id": room_id,
             "message_id": message_id
         })
         time.sleep(0.3)
@@ -228,7 +228,7 @@ class ChatClient:
         """Elimina múltiples mensajes"""
         print(f"\n🗑️  Eliminando {len(message_ids)} mensajes de {room_id}...")
         self.send_action("delete_messages", {
-            "room_id": room_id,
+            "chat_id": room_id,
             "message_ids": message_ids
         })
         time.sleep(0.3)

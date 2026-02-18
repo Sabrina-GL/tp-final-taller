@@ -20,27 +20,83 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 
 ## Inicio rapido
 
-### 1. Servidor Elixir
-```bash
-git clone <repository-url>
-cd tp-final-taller/chat_app
-mix deps.get
-mix compile
-iex -S mix
-```
-
-Servidor disponible en `http://localhost:4000`.
-
-### 2. Cliente por Consola (Python)
+### 1. Setup inicial (Docker recomendado)
 ```bash
 cd tp-final-taller
-pip install -r requirements.txt
+make setup-docker              # una vez (agrega usuario a grupo docker)
+newgrp docker                  # activa grupo docker sin relogin
+make setup-dockerized          # build + up + status
+```
+
+**Alternativa sin reiniciar sesión:**
+```bash
+make setup-docker
+make setup-dockerized-sudo     # usa sudo para arrancar sin relogin
+```
+
+### 2. Servidor y clientes
+```bash
+make docker-logs  # ver logs del backend en contenedor
+python3 client.py
+```
+
+El servidor estará disponible en `http://localhost:4000` y WebSocket en `ws://localhost:4000/ws`.
+
+### 3. Alternativa local (sin Docker)
+```bash
+make setup
+make dev
+```
+
+### 4. Cliente por Consola (Python)
+```bash
+cd tp-final-taller
 python3 client.py
 ```
 
 Sigue el menú interactivo para registrarte, iniciar sesión y usar el chat.
 
 **Documentación**: Ver [CLIENT_README.md](CLIENT_README.md)
+
+## Comandos Útiles
+
+```bash
+make help         # Muestra todos los comandos disponibles
+make setup        # Setup completo del proyecto
+make setup-dockerized # Setup completo usando Docker
+make demo         # Prepara demo (BD limpia + guía rápida)
+make test         # Ejecuta tests (133 tests, 85.12% cobertura)
+make db-reset     # Limpia BD y la reinicia (usa antes de demo)
+make reset-all    # Reinicio total (docker + SQLite + build + caches)
+make setup-docker # Configura permisos para docker sin sudo (requiere relogin)
+make docker-reset # Reinicia contenedores y volúmenes
+make clean        # Limpia artifacts de compilación
+```
+
+## Docker (recomendado para producción)
+
+El proyecto funciona con SQLite local y **no requiere Docker** para desarrollo rápido.
+Docker es recomendado para entornos consistentes y despliegue:
+
+```bash
+make setup-docker           # agrega usuario a grupo docker
+newgrp docker               # activa grupo sin relogin
+make setup-dockerized       # build + up + status
+make docker-logs            # ver logs del backend
+make docker-down            # detener contenedores
+```
+
+**Alternativa sin reiniciar sesión:**
+```bash
+make setup-docker
+make docker-up-sudo         # usa sudo directamente
+make docker-logs-sudo       # ver logs con sudo
+```
+
+Si ves `permission denied /var/run/docker.sock`:
+- Usa `newgrp docker` para activar el grupo sin relogin
+- O usa comandos con `-sudo`: `make docker-up-sudo`
+- O ejecuta `make setup-docker`, cierra sesión y vuelve a entrar (solución permanente)
 
 ### 3. Cliente Web (Navegador)
 El servidor sirve una interfaz web en:

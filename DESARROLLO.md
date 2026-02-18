@@ -225,14 +225,26 @@ MIX_ENV=prod mix release
 _build/prod/rel/chat_app/bin/chat_app start
 ```
 
-### Docker (Futuro)
-```dockerfile
-FROM elixir:latest
-WORKDIR /app
-COPY . .
-RUN mix deps.get && mix compile
-CMD ["mix", "run", "--no-halt"]
+### Docker (Opcional)
+
+El proyecto corre localmente con SQLite y no necesita Docker para desarrollo normal.
+Si prefieres workflow dockerizado (recomendado para entorno reproducible):
+
+```bash
+make setup-docker          # agrega usuario a grupo docker
+newgrp docker              # activa grupo sin relogin
+make setup-dockerized      # build + up + status
+make docker-logs           # ver logs del backend
+make docker-down           # detener contenedores
 ```
+
+**Alternativa sin reiniciar sesión:**
+```bash
+make setup-docker
+make setup-dockerized-sudo # usa sudo directamente
+```
+
+Compose definido en `docker-compose.yml`.
 
 ## Documentación Generada
 

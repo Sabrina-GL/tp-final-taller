@@ -1,0 +1,18 @@
+services:
+  chat_app:
+    build:
+      context: ./chat_app
+      dockerfile: Dockerfile
+    container_name: chat_app
+    environment:
+      MIX_ENV: dev
+      CHAT_APP_DB_PATH: /app/data/chat_app_dev.db
+      AUTO_MIGRATE_ON_START: "true"
+    ports:
+      - "4000:4000"
+    volumes:
+      - chat_app_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  chat_app_data:

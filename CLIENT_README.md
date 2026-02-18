@@ -21,23 +21,36 @@ pip install websocket-client requests
 
 ## ▶️ Ejecución
 
-1.  **Base de datos** (solo la primera vez)
+1. **Backend Docker (recomendado)**
+
+```bash
+cd tp-final-taller
+make setup-docker          # agrega usuario a grupo docker
+newgrp docker              # activa grupo sin relogin
+make setup-dockerized      # levanta backend en contenedor
+```
+
+**Alternativa sin reiniciar sesión:**
+```bash
+make setup-docker
+make setup-dockerized-sudo # usa sudo directamente
+```
+
+2. **Ejecutar el cliente** (en otra terminal):
+
+```bash
+cd tp-final-taller
+python3 client.py
+```
+
+3. **Alternativa local (sin Docker)**
 
 ```bash
 cd chat_app
 mix deps.get
 mix ecto.create
 mix ecto.migrate
-```
-
-2. **Iniciar el servidor Elixir**:
-```bash
 iex -S mix
-```
-
-3. **Ejecutar el cliente** (en otra terminal):
-```bash
-python3 client.py
 ```
 
 O hacerlo ejecutable:

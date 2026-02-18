@@ -9,31 +9,46 @@
 cd tp-final-taller
 elixir --version  # Verificar Elixir
 python3 --version # Verificar Python
+make help         # Ver comandos disponibles
 ```
 
-2. **Instalar dependencias**:
+2. **Setup inicial Docker** (primera vez solamente):
 ```bash
-# Backend
-cd chat_app
-mix deps.get
-
-# Cliente
-cd ..
+make setup-docker              # agrega usuario a grupo docker
+newgrp docker                  # activa grupo sin relogin
+make setup-dockerized          # levanta backend en contenedor
 pip install -r requirements.txt
 ```
+
+**Alternativa sin reiniciar sesión:**
+```bash
+make setup-docker
+make setup-dockerized-sudo     # usa sudo directamente
+pip install -r requirements.txt
+```
+
+3. **Preparar BD limpia** (justo antes de demostrar):
+```bash
+make docker-reset              # reinicia contenedores y volumenes
+# O si tienes problemas de permisos: make docker-reset-sudo
+```
+
+Alternativa local (sin Docker): `make setup && make demo-setup`
 
 ### Demo en Vivo
 
 #### Terminal 1: Servidor
 ```bash
-cd chat_app
-iex -S mix
+cd tp-final-taller
+make docker-status
+make docker-logs
 ```
 
 Esperar a ver: `💬 Chat application started on port 4000`
 
 #### Terminal 2: Cliente Alice
 ```bash
+cd tp-final-taller
 ./demo_client.sh
 ```
 
@@ -44,6 +59,7 @@ Esperar a ver: `💬 Chat application started on port 4000`
 
 #### Terminal 3: Cliente Bob (simultáneo)
 ```bash
+cd tp-final-taller
 python3 client.py
 ```
 
@@ -158,8 +174,8 @@ http://localhost:4000
 
 #### Tests
 ```bash
-cd chat_app
-mix test
+cd tp-final-taller
+make test
 ```
 → Mostrará: 133 tests, 85.12% cobertura, todos ✅
 
@@ -171,6 +187,22 @@ mix test
 
 **Error: "Usuario ya existe"**
 - Usar otros nombres: carol, dave, eve, etc.
+
+**Error: `no such table: contacts` (o tablas faltantes)**
+- Si estás usando Docker: `make docker-reset`
+- Si estás en local: en `chat_app/` ejecutar `mix ecto.create && mix ecto.migrate`
+- Reiniciar servidor
+
+**Error Docker: `permission denied /var/run/docker.sock`**
+- Solución 1: Activar grupo docker → `newgrp docker` y reintentar
+- Solución 2: Usar comandos con sudo → `make setup-dockerized-sudo`, `make docker-logs-sudo`
+- Solución 3 (permanente): Ejecutar `make setup-docker`, cerrar sesión y volver a entrar
+
+**Error: "Missing user" en WebSocket**
+- Este error significa que el cliente no pasó el usuario en la URL del WebSocket
+- Solución: El cliente.py debe conectar a `ws://localhost:4000/ws?user=<username>`
+- ✅ YA ESTÁ CORREGIDO en la última versión del código
+- Si aún aparece: Garantizar que `client.py` tenga la línea: `ws_url = f"{self.ws_url}?user={self.username}"`
 
 **No llegan notificaciones**
 - Verificar que ambos clientes estén conectados
@@ -194,8 +226,8 @@ Si prefieres demostrar con la interfaz web (sin cliente Python), es más simple:
 ### Preparación
 
 ```bash
-cd chat_app
-iex -S mix
+cd tp-final-taller
+make dev
 ```
 
 Esperar a: `💬 Chat application started on port 4000`
