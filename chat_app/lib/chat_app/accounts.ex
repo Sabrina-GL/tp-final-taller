@@ -99,6 +99,22 @@ defmodule ChatApp.Accounts do
     end
   end
 
+  def get_contacts_who_added_user(username) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username) do
+      contacts =
+        Contact
+        |> where([c], c.contact_id == ^user_id and c.status == "active")
+        |> join(:inner, [c], u in User, on: c.user_id == u.id)
+        |> order_by([_c, u], asc: u.username)
+        |> select([_c, u], u.username)
+        |> Repo.all()
+
+      {:ok, contacts}
+    else
+      nil -> {:error, :user_not_found}
+    end
+  end
+
   def add_contact(username, contact) do
     if username == contact do
       {:error, :cannot_add_self}

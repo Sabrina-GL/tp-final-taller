@@ -29,8 +29,17 @@ defmodule ChatWeb.SocketHandler do
       case data["action"] do
         "get_contacts" ->
           case Accounts.get_contacts(state.user) do
-            {:ok, contacts} -> %{contacts: contacts}
-            {:error, reason} -> %{error: reason}
+            {:ok, contacts} ->
+              contacts_with_status =
+                Enum.map(contacts, fn contact ->
+                  online = ChatApp.ActivityServer.is_online?(contact)
+                  %{username: contact, online: online}
+                end)
+
+              %{contacts: contacts_with_status}
+
+            {:error, reason} ->
+              %{error: reason}
           end
 
         "get_chatrooms" ->
@@ -63,9 +72,15 @@ defmodule ChatWeb.SocketHandler do
                {:ok, _chat_id} <-
                  ChatManager.create_private_chat(state.user, data["contact"]),
                chatrooms <- ChatManager.get_user_chatrooms(state.user) do
+            contacts_with_status =
+              Enum.map(contacts, fn contact ->
+                online = ChatApp.ActivityServer.is_online?(contact)
+                %{username: contact, online: online}
+              end)
+
             %{
               status: :contact_added,
-              contacts: contacts,
+              contacts: contacts_with_status,
               chatrooms: chatrooms,
               chat_opened: true,
               chat_id: "#{Enum.sort([state.user, data["contact"]]) |> Enum.join(":")}"
@@ -142,7 +157,11 @@ defmodule ChatWeb.SocketHandler do
           end
 
         "delete_messages" ->
-          case ChatRoomServer.delete_messages(data["chat_id"], state.user, data["message_ids"] || []) do
+          case ChatRoomServer.delete_messages(
+                 data["chat_id"],
+                 state.user,
+                 data["message_ids"] || []
+               ) do
             {:ok, deleted_count} -> %{status: :messages_deleted, deleted_count: deleted_count}
             {:error, reason} -> %{status: :error, error: reason}
           end
@@ -166,6 +185,10 @@ defmodule ChatWeb.SocketHandler do
   def websocket_info({:new_message, chat_id, message}, state) do
     reply = Jason.encode!(%{status: :new_message, chat_id: chat_id, message: message})
     {:reply, {:text, reply}, state}
+  end
+
+  def websocket_info({:websocket_message, message}, state) do
+    {:reply, {:text, message}, state}
   end
 
   def websocket_info(_info, state) do

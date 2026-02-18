@@ -25,30 +25,27 @@
             </div>
         </nav>
 
-        <!-- <header class="app-header">
-            <h1>Chat App</h1>
-        </header> -->
-
-
         <aside class="sidebar" id="sidebar">
 
             <div class="sidebar-section" id="contacts-section">
                 <h3>Mis Contactos</h3>
-                <ul id="contacts-list"></ul>
 
-                <div id="add-contact-section">
+                <div class="add-contact-section">
                     <input type="text" id="contact" placeholder="Nuevo contacto">
-                    <button id="add-contact-btn">Agregar Contacto</button>
+                    <button id="add-contact-btn">➕</button>
                 </div>
+
+                <ul class="data-list" id="contacts-list"></ul>
             </div>
 
             <div class="sidebar-section" id="chatrooms-section">
                 <h3>Mis Chats</h3>
-                <ul class="list" id="chatrooms-list"></ul>
 
-                <div id="create-groupchat-section">
+                <div class="create-groupchat-section">
                     <button id="new-group-chat-btn">Nuevo Grupo</button>
                 </div>
+
+                <ul class="data-list" id="chatrooms-list"></ul>
             </div>
         </aside>
 
@@ -68,7 +65,35 @@
         </div>
     </div>
 
-    <script src="/static/application.js"></script>
+    <!-- Modal para crear grupo -->
+    <div id="group-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Crear nuevo grupo</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="group-name">Nombre del grupo:</label>
+                    <input type="text" id="group-name" placeholder="Ej: Amigos del trabajo">
+                </div>
+                <div class="form-group">
+                    <label>Selecciona participantes:</label>
+                    <div id="contacts-list-modal" class="contacts-list">
+                        <!-- Los contactos se cargan aca -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="create-group-btn" class="btn-primary">Crear grupo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/contacts.js"></script>
+    <script src="/static/js/chatrooms.js"></script>
 
 </body>
 

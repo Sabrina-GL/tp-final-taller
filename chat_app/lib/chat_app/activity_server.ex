@@ -45,11 +45,15 @@ defmodule ChatApp.ActivityServer do
   end
 
   def handle_call(:user_online, _from, state) do
-    {:reply, :ok, %{state | status: :online, last_seen: DateTime.utc_now()}}
+    new_state = %{state | status: :online, last_seen: DateTime.utc_now()}
+    notify_contacts_online(state.username, true)
+    {:reply, :ok, new_state}
   end
 
   def handle_call(:user_offline, _from, state) do
-    {:reply, :ok, %{state | status: :offline, last_seen: DateTime.utc_now()}}
+    new_state = %{state | status: :offline, last_seen: DateTime.utc_now()}
+    notify_contacts_online(state.username, false)
+    {:reply, :ok, new_state}
   end
 
   def handle_call(:is_online, _from, state) do
@@ -76,8 +80,48 @@ defmodule ChatApp.ActivityServer do
     {:noreply, %{state | pending: state.pending ++ [msg]}}
   end
 
+  def handle_info({:contact_status_change, username, online}, state) do
+    send_to_websocket(state.username, %{
+      type: "contact_status",
+      username: username,
+      online: online
+    })
+
+    {:noreply, state}
+  end
+
   def handle_info(msg, state) do
     IO.puts("ActivityServer received unexpected message: #{inspect(msg)}")
     {:noreply, state}
+  end
+
+  defp notify_contacts_online(username, online) do
+    case ChatApp.Accounts.get_contacts_who_added_user(username) do
+      {:ok, contacts} ->
+        online_contacts = Enum.filter(contacts, &is_online?/1)
+
+        for contact <- online_contacts do
+          case Registry.lookup(ChatApp.ActivityRegistry, contact) do
+            [{pid, _}] ->
+              Process.send(pid, {:contact_status_change, username, online}, [])
+
+            [] ->
+              :ok
+          end
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp send_to_websocket(username, message) do
+    case Registry.lookup(ChatApp.UsersRegistry, username) do
+      [{pid, _}] ->
+        Process.send(pid, {:websocket_message, Jason.encode!(message)}, [])
+
+      [] ->
+        :ok
+    end
   end
 end

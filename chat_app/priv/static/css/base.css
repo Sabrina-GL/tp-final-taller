@@ -11,8 +11,8 @@ body {
 }
 
 button {
-    background-color: #5A595D;
-    color: white;
+    background-color: #d5cff6;
+    color: #5A595D;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
@@ -20,6 +20,16 @@ button {
 }
 
 button:hover {
+    background-color: #FEECBC;
+    color: #5A595D;
+}
+
+.button-secondary {
+    background-color: #5A595D;
+    color: white;
+}
+
+.button-secondary:hover {
     background-color: #FEECBC;
     color: #5A595D;
 }
