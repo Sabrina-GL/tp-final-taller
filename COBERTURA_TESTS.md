@@ -3,6 +3,7 @@
 ## Estado actual
 
 Este archivo resume **cómo medir cobertura** y **cómo reportar resultados vigentes**.
+Se toma como **fuente canónica** para métricas de tests/cobertura en el proyecto.
 
 Última actualización del documento: 2026-02-18.
 
@@ -13,6 +14,7 @@ Este archivo resume **cómo medir cobertura** y **cómo reportar resultados vige
 - Cobertura total: `81.77%`
 - Umbral configurado: `80.00%`
 - Estado del comando: exitoso (exit code 0)
+- Vigencia: estos valores corresponden a la última actualización de este documento.
 
 ## Cómo ejecutar
 
