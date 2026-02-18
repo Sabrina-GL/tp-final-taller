@@ -21,21 +21,21 @@
 ### Chats
 - Creación de chats 1-a-1 (privados)
 - Creación de chats grupales (múltiples participantes)
-- Almacenamiento de últimos 10 mensajes por sala (con persistencia en SQLite)
+- Almacenamiento de últimos 10 mensajes por sala (con persistencia en PostgreSQL)
 - Búsqueda por palabra clave dentro de una sala
 - Validación de participante al enviar mensaje (rechaza no-participantes)
 - Notificaciones a participantes (excepto remitente)
-- Persistencia completa de mensajes en SQLite (tabla messages)
+- Persistencia completa de mensajes en PostgreSQL (tabla messages)
 
-### 🔄 Persistencia con Ecto + SQLite (NUEVO)
-- ✅ Usuarios almacenados en SQLite (no se pierden en reinicios)
-- ✅ Contactos almacenados en SQLite (tabla contacts con relación user-contact)
-- ✅ Salas de chat almacenadas en SQLite (tabla chatrooms con campo participants array)
-- ✅ Mensajes almacenados en SQLite (historial completo)
+### 🔄 Persistencia con Ecto + PostgreSQL (NUEVO)
+- ✅ Usuarios almacenados en PostgreSQL (no se pierden en reinicios)
+- ✅ Contactos almacenados en PostgreSQL (tabla contacts con relación user-contact)
+- ✅ Salas de chat almacenadas en PostgreSQL (tabla chatrooms con campo participants array)
+- ✅ Mensajes almacenados en PostgreSQL (historial completo)
 - ✅ Contraseñas hasheadas con Bcrypt en base de datos
 - ✅ Migrations automáticas aplicadas en test/dev/prod
 - ✅ Contactos y estado online en ETS (caché rápido)
-- ✅ Base de datos: `chat_app_dev.db` (SQLite 3)
+- ✅ Base de datos: `chat_app_dev` (PostgreSQL)
 
 ### API REST
 - POST /api/register - Registro de usuario
@@ -79,11 +79,13 @@ Acciones disponibles:
 - Documentación: [CLIENT_README.md](CLIENT_README.md)
 
 ### Testing
-- **133 tests** implementados con **85.12% de cobertura**
-- Tests unitarios para: Accounts, ActivityServer, ChatManager, ChatRoom, Notifications, SocketHandler
+- Suite de tests automatizada implementada
+- Cobertura verificable con `mix test --cover`
+- Tests unitarios para: Accounts, ActivityServer, ChatManager, ChatRoomServer, Notifications, SocketHandler
 - Tests de integración para: Router (HTTP endpoints)
-- Todos los tests pasan exitosamente ✅
-- Nota: Cobertura se redujo levemente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos
+- `mix test`: pasa exitosamente ✅
+- `mix test --cover`: reporta cobertura con threshold configurado en 80% y su estado depende de la corrida actual
+- Nota: los valores exactos de cobertura y conteo pueden variar según la última corrida
 
 ## 🔧 Mejoras recientes aplicadas
 - **Reestructuración OTP**: Separación de responsabilidades (ActivityServer por usuario, ChatRoomServer por sala)
@@ -137,7 +139,7 @@ Acciones disponibles:
 | Notificaciones offline | ✅ Con cola y entrega |
 | Documentación | ✅ README + ARQUITECTURA + DESARROLLO |
 | Cliente por consola | ✅ **Python con WebSocket** |
-| Tests básicos | ✅ 133 tests, 85.12% cobertura |
+| Tests básicos | ✅ Suite automatizada + cobertura ejecutable |
 | OTP correctamente | ✅ Supervision tree completo |
 
 ## 🎯 Estado general
@@ -146,5 +148,5 @@ Acciones disponibles:
 
 **Código limpio**: ✅ Warnings eliminados, errores corregidos, código modular
 **Documentación**: ✅ README claro, instrucciones completas
-**Tests**: ✅ Cobertura sólida (85.12%)
+**Tests**: ✅ Cobertura sólida (medible en cada ejecución)
 **OTP**: ✅ Uso correcto de supervisores y GenServers

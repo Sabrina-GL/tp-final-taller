@@ -1,5 +1,5 @@
 defmodule AccountsTest do
-  use ExUnit.Case
+  use ChatApp.DataCase
   alias ChatApp.Accounts
 
   setup do

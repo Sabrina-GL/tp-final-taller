@@ -11,9 +11,15 @@ config :logger,
 config :chat_app, ecto_repos: [ChatApp.Repo]
 
 config :chat_app, ChatApp.Repo,
-  database: "chat_app.db",
+  username: System.get_env("POSTGRES_USER", "postgres"),
+  password: System.get_env("POSTGRES_PASSWORD", "postgres"),
+  hostname: System.get_env("POSTGRES_HOST", "localhost"),
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
+  database: System.get_env("POSTGRES_DB", "chat_app_dev"),
+  maintenance_database: System.get_env("POSTGRES_MAINTENANCE_DB", "postgres"),
   pool_size: 10,
-  pragma_foreign_keys: true
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true
 
 # Development environment specific config
 if Mix.env() == :dev do
@@ -21,7 +27,7 @@ if Mix.env() == :dev do
     level: :debug
 
   config :chat_app, ChatApp.Repo,
-    database: System.get_env("CHAT_APP_DB_PATH", "chat_app_dev.db")
+    database: System.get_env("POSTGRES_DB", "chat_app_dev")
 
   # Hot reload configuration
   config :chat_app,
@@ -34,8 +40,22 @@ if Mix.env() == :test do
     level: :warning
 
   config :chat_app, ChatApp.Repo,
-    database: ":memory:",
-    pool_size: 1
+    username: System.get_env("POSTGRES_TEST_USER", System.get_env("POSTGRES_USER", "postgres")),
+    password:
+      System.get_env("POSTGRES_TEST_PASSWORD", System.get_env("POSTGRES_PASSWORD", "postgres")),
+    hostname: System.get_env("POSTGRES_TEST_HOST", System.get_env("POSTGRES_HOST", "localhost")),
+    port:
+      String.to_integer(
+        System.get_env("POSTGRES_TEST_PORT", System.get_env("POSTGRES_PORT", "5432"))
+      ),
+    database: System.get_env("POSTGRES_TEST_DB", "chat_app_test"),
+    maintenance_database:
+      System.get_env(
+        "POSTGRES_TEST_MAINTENANCE_DB",
+        System.get_env("POSTGRES_MAINTENANCE_DB", "postgres")
+      ),
+    pool_size: 2,
+    pool: Ecto.Adapters.SQL.Sandbox
 end
 
 # Production environment specific config
@@ -44,7 +64,12 @@ if Mix.env() == :prod do
     level: :info
 
   config :chat_app, ChatApp.Repo,
-    database: System.get_env("CHAT_APP_DB_PATH", "chat_app_prod.db")
+    username: System.get_env("POSTGRES_USER", "postgres"),
+    password: System.get_env("POSTGRES_PASSWORD", "postgres"),
+    hostname: System.get_env("POSTGRES_HOST", "localhost"),
+    port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
+    database: System.get_env("POSTGRES_DB", "chat_app_prod"),
+    pool_size: String.to_integer(System.get_env("POOL_SIZE", "10"))
 end
 
 # Application config

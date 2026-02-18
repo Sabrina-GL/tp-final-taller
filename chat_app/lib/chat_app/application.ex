@@ -6,7 +6,7 @@ defmodule ChatApp.Application do
   def start(_type, _args) do
     # Obtener puerto de configuración, con fallback a 4000
     port = Application.get_env(:chat_app, :websocket_port, 4000)
-    
+
     children = [
       ChatApp.Repo,
       {Registry, keys: :unique, name: ChatApp.UsersRegistry},

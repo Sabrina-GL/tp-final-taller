@@ -1,5 +1,5 @@
 defmodule ChatApp.ChatRoomTest do
-  use ExUnit.Case
+  use ChatApp.DataCase
   alias ChatApp.{ChatRoomServer, Accounts, Repo}
 
   setup do

@@ -1,5 +1,5 @@
 defmodule ChatApp.NotificationsTest do
-  use ExUnit.Case, async: false
+  use ChatApp.DataCase, async: false
 
   alias ChatApp.{Accounts, Notifications, ActivitySupervisor, Repo}
 

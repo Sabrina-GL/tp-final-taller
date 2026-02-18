@@ -1,7 +1,7 @@
 FROM elixir:1.18
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential git sqlite3 libsqlite3-dev && \
+    apt-get install -y --no-install-recommends build-essential git postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -19,7 +19,11 @@ COPY priv ./priv
 RUN mix compile
 
 ENV MIX_ENV=dev
-ENV CHAT_APP_DB_PATH=/app/data/chat_app_dev.db
+ENV POSTGRES_HOST=postgres
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=chat_app_dev
 ENV AUTO_MIGRATE_ON_START=true
 
 EXPOSE 4000

@@ -1,5 +1,5 @@
 defmodule ChatApp.SchemasTest do
-  use ExUnit.Case
+  use ChatApp.DataCase
   alias ChatApp.Schemas.{Message, User, Contact, Chatroom}
   alias ChatApp.Repo
 

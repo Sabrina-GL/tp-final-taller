@@ -12,7 +12,7 @@ Sistema de chat cliente-servidor desarrollado en Elixir usando OTP y WebSocket (
 
 ### Para Desarrollador / Testing
 - [chat_app/README.md](chat_app/README.md) - 📚 Guía técnica del backend (API, módulos, configuración, troubleshooting)
-- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Análisis detallado de cobertura de tests (85.12%)
+- [COBERTURA_TESTS.md](COBERTURA_TESTS.md) - 📊 Guía para ejecutar y reportar cobertura de tests
 - [ARQUITECTURA.md](ARQUITECTURA.md) - 🏗️ Decisiones de arquitectura y diagrama
 - [DESARROLLO.md](DESARROLLO.md) - 🛠️ Lineamientos de desarrollo
 - [ESTADO.md](ESTADO.md) - ✅ Resumen de features implementados vs pendientes
@@ -48,6 +48,9 @@ make setup
 make dev
 ```
 
+Requiere Postgres local corriendo (por defecto en `localhost:5432`) y variables `POSTGRES_*`
+si no usas los valores por defecto (`postgres/postgres`, DB `chat_app_dev`).
+
 ### 4. Cliente por Consola (Python)
 ```bash
 cd tp-final-taller
@@ -65,9 +68,10 @@ make help         # Muestra todos los comandos disponibles
 make setup        # Setup completo del proyecto
 make setup-dockerized # Setup completo usando Docker
 make demo         # Prepara demo (BD limpia + guía rápida)
-make test         # Ejecuta tests (133 tests, 85.12% cobertura)
+make test         # Ejecuta tests
+cd chat_app && mix test --cover  # Ejecuta tests con cobertura
 make db-reset     # Limpia BD y la reinicia (usa antes de demo)
-make reset-all    # Reinicio total (docker + SQLite + build + caches)
+make reset-all    # Reinicio total (docker + Postgres + build + caches)
 make setup-docker # Configura permisos para docker sin sudo (requiere relogin)
 make docker-reset # Reinicia contenedores y volúmenes
 make clean        # Limpia artifacts de compilación
@@ -75,8 +79,8 @@ make clean        # Limpia artifacts de compilación
 
 ## Docker (recomendado para producción)
 
-El proyecto funciona con SQLite local y **no requiere Docker** para desarrollo rápido.
-Docker es recomendado para entornos consistentes y despliegue:
+El proyecto usa PostgreSQL para persistencia. Docker incluye el servicio `postgres`.
+Si no usas Docker, necesitas un Postgres local y variables `POSTGRES_*` configuradas.
 
 ```bash
 make setup-docker           # agrega usuario a grupo docker
@@ -125,14 +129,14 @@ ESTADO.md          # Estado del proyecto
 ### Core ✅
 - ✅ Alta de usuarios con validaciones (username ≥3 chars, password ≥6 chars)
 - ✅ Autenticación con hash de password (Bcrypt)
-- ✅ Usuarios y credenciales persistidos en SQLite (Ecto ORM)
+- ✅ Usuarios y credenciales persistidos en PostgreSQL (Ecto ORM)
 - ✅ Estado de conexión (online/offline y last_seen)
 - ✅ Lista de contactos (agregar y listar)
 - ✅ Chats individuales (creación automática al agregar contacto)
 - ✅ Chats grupales (múltiples participantes)
 
 ### Mensajes ✅
-- ✅ Últimos 10 mensajes en cada conversación (persistidos en SQLite)
+- ✅ Últimos 10 mensajes en cada conversación (persistidos en PostgreSQL)
 - ✅ Búsqueda de mensajes por palabra clave
 - ✅ Validación de participantes (rechaza mensajes de no-participantes)
 - ✅ Notificaciones en tiempo real (excepto al remitente)
@@ -145,16 +149,14 @@ ESTADO.md          # Estado del proyecto
 - ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, block_contact, create_group_chat, send_message, search_messages, delete_message, delete_messages
 
 ### Testing ✅
-- ✅ 133 tests unitarios y de integración
-- ✅ 85.12% de cobertura de código (incluye schemas Ecto)
-- ✅ Tests para: Accounts, ChatManager, ChatRoom, ActivityServer, Notifications, Router, SocketHandler
+- ✅ Suite de tests unitarios y de integración
+- ✅ Cobertura de código disponible con `mix test --cover`
+- ✅ Tests para: Accounts, ChatManager, ChatRoomServer, ActivityServer, Notifications, Router, SocketHandler
 
 ### Cobertura de tests (resumen) ✅
-- **Total**: 85.12% (133 tests)
-- **SocketHandler**: 85.71% con tests unitarios directos de callbacks
-- **Módulos core**: >= 85% en Accounts, ChatManager, ActivityServer, Notifications
-- **Persistencia**: Ecto + SQLite (Schemas User y Message)
-- Ejecutar: `mix test --cover`
+- Reporte basado en la última ejecución de `mix test --cover`
+- La cobertura puede variar según cambios recientes en código y tests
+- Ver detalle actualizado en `COBERTURA_TESTS.md`
 
 ### Opcionales
 - ✅ Front-end HTML/CSS con WebSocket (básico funcional)

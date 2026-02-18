@@ -1,5 +1,5 @@
 defmodule ChatManagerTest do
-  use ExUnit.Case
+  use ChatApp.DataCase
   alias ChatApp.{ChatManager, Accounts, Repo}
 
   setup do

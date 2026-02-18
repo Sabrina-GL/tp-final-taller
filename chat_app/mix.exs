@@ -12,6 +12,7 @@ defmodule ChatApp.MixProject do
         test: :test,
         "test.all": :test
       ],
+      test_coverage: [summary: [threshold: 80]],
       deps: deps()
     ]
   end
@@ -37,7 +38,8 @@ defmodule ChatApp.MixProject do
 
       # Database
       {:ecto, "~> 3.10"},
-      {:ecto_sqlite3, "~> 0.9"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0"},
 
       # Hashing passwords
       {:bcrypt_elixir, "~> 3.0"},

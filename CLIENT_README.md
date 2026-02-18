@@ -48,10 +48,14 @@ python3 client.py
 ```bash
 cd chat_app
 mix deps.get
+mix ecto.drop
 mix ecto.create
 mix ecto.migrate
 iex -S mix
 ```
+
+Requiere Postgres local corriendo (por defecto `localhost:5432`) y variables `POSTGRES_*`
+si no usas los valores por defecto (`postgres/postgres`, DB `chat_app_dev`).
 
 O hacerlo ejecutable:
 ```bash
@@ -102,14 +106,14 @@ Contraseña (mínimo 6 caracteres): alice123
 ### 2. Iniciar sesión
 ```
 Seleccione una opción: 2
-ID del chat: alice:bob
+Usuario: alice
 Contraseña: alice123
 ✅ Login exitoso. Bienvenido alice!
 ```
 
 ### 3. Agregar contacto
 ```
-ID del chat: alice:bob
+Opción: 2
 Usuario a agregar: bob
 👤 Agregando contacto: bob
 ```
@@ -123,7 +127,7 @@ Usuario a bloquear: charlie
 *Nota: El bloqueo es bidireccional. Charlie tampoco podrá enviarte mensajes.*
 
 ### 4. Crear chat grupal
-ID del chat: alice:bob
+```
 Opción: 4
 Nombre del grupo: equipo
 Participantes (separados por coma): bob, charlie
@@ -132,7 +136,7 @@ Participantes (separados por coma): bob, charlie
 
 ### 6. Ver mensajes
 ```
-Opción: 6
+Opción: 7
 ID del chat: alice:bob
 📬 Obteniendo mensajes de alice:bob...
 ```

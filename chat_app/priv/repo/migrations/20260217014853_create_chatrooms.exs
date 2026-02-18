@@ -11,7 +11,7 @@ defmodule ChatApp.Repo.Migrations.CreateChatrooms do
       timestamps()
     end
 
-    create(index(:chatrooms, [:chat_id]))
+    create(unique_index(:chatrooms, [:chat_id]))
     create(index(:chatrooms, [:type]))
   end
 end

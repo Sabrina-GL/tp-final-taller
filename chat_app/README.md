@@ -11,7 +11,7 @@ Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowb
 - ✅ Chats privados entre dos usuarios
 - ✅ Chats grupales
 - ✅ Envío y recepción de mensajes en tiempo real
-- ✅ Historial de mensajes persistente (SQLite)
+- ✅ Historial de mensajes persistente (PostgreSQL)
 - ✅ Con estatus online/offline
 - ✅ Búsqueda de mensajes
 
@@ -24,7 +24,7 @@ Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowb
 - Elixir >= 1.17
 - Erlang/OTP >= 25
 - Mix (incluido con Elixir)
-- SQLite3 (integrado con Ecto, necesario para persistencia de usuarios y mensajes)
+- PostgreSQL (vía Ecto, necesario para persistencia de usuarios y mensajes)
 
 ## Inicio rapido
 
@@ -42,7 +42,7 @@ make docker-logs          # ver logs del backend
 # cd chat_app && mix run --no-halt
 ```
 
-Nota: al iniciar, la app intenta correr migraciones automáticamente. Si vienes de una base vacía o borraste `chat_app_dev.db`, los comandos anteriores se encargan de eso. Servidor disponible en:
+Nota: al iniciar, la app intenta correr migraciones automáticamente. Si vienes de una base vacía, los comandos anteriores se encargan de eso. Servidor disponible en:
 - HTTP: http://localhost:4000
 - WebSocket: ws://localhost:4000/ws?user=username
 
@@ -57,7 +57,7 @@ make db-reset
 
 # Opción 2: Manual desde chat_app
 cd chat_app
-rm chat_app_dev.db
+mix ecto.drop
 mix ecto.create
 mix ecto.migrate
 ```
@@ -71,7 +71,7 @@ make demo-setup    # Resetea BD + muestra instrucciones
 
 ## Docker (recomendado)
 
-Este backend usa SQLite para persistencia y en Docker se guarda en el volumen `chat_app_data`.
+Este backend usa PostgreSQL para persistencia y en Docker se guarda en el volumen `postgres_data`.
 Flujo recomendado:
 
 ```bash
@@ -180,13 +180,13 @@ ChatApp.ChatRoomServer.delete_messages(chat_id, "alice", [msg1.id, msg2.id])
 ## Modulos principales
 
 - `ChatApp.Application` - Punto de entrada OTP y supervision
-- `ChatApp.Accounts` - Registro y autenticacion de usuarios (con Ecto + SQLite)
+- `ChatApp.Accounts` - Registro y autenticacion de usuarios (con Ecto + PostgreSQL)
 - `ChatApp.ChatManager` - Gestor central de conversaciones
-- `ChatApp.ChatRoom` - Logica de salas y mensajes (con persistencia en SQLite)
+- `ChatApp.ChatRoomServer` - Logica de salas y mensajes (con persistencia en PostgreSQL)
 - `ChatApp.ActivityServer` - Estado activo/inactivo y cola offline por usuario
 - `ChatApp.ActivitySupervisor` - Supervisor dinámico de ActivityServer
 - `ChatApp.ChatRoomSupervisor` - Supervisor dinamico de salas
-- `ChatApp.Repo` - Repositorio Ecto para SQLite
+- `ChatApp.Repo` - Repositorio Ecto para PostgreSQL
 - `ChatApp.Schemas.User` - Schema de usuarios
 - `ChatApp.Schemas.Message` - Schema de mensajes
 - `ChatWeb.Router` - Rutas HTTP y upgrade a WebSocket
@@ -213,10 +213,14 @@ Plug.Cowboy.child_spec(
 ```
 
 ### Base de datos
-Configurar en `config/config.exs` (si se usa persistencia):
+Configurar en `config/config.exs`:
 ```elixir
 config :chat_app, ChatApp.Repo,
-  database: "chat_app.db",
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  port: 5432,
+  database: "chat_app_dev",
   pool_size: 10
 ```
 
@@ -247,7 +251,7 @@ mix dialyzer
 
 ### Test Coverage
 
-- **133 tests** cubriendo:
+- Suite de tests cubriendo:
   - Autenticación y gestión de usuarios
   - Creación y gestión de chats (privados y grupales)
   - Mensajería y búsqueda
@@ -273,8 +277,9 @@ mix compile
 
 ### Base de datos corrupta
 ```bash
-rm -f chat_app.db
-mix compile
+mix ecto.drop
+mix ecto.create
+mix ecto.migrate
 ```
 
 ## Enlaces útiles
@@ -283,13 +288,11 @@ mix compile
 - [README principal](../README.md) - Visión general y características
 - [DEMO.md](../DEMO.md) - Guía paso a paso para demostración en vivo
 - [CLIENT_README.md](../CLIENT_README.md) - Documentación del cliente Python
-- [COBERTURA_TESTS.md](../COBERTURA_TESTS.md) - Análisis de cobertura de tests (85.12%)
+- [COBERTURA_TESTS.md](../COBERTURA_TESTS.md) - Guía de cobertura de tests
 
 ### Documentación de Desarrollo
 - [ARQUITECTURA.md](../ARQUITECTURA.md) - Decisiones de arquitectura y diagrama
 - [DESARROLLO.md](../DESARROLLO.md) - Lineamientos de desarrollo
 - [ESTADO.md](../ESTADO.md) - Resumen de features implementados vs pendientes
 - [consigna-tp-final.txt](../consigna-tp-final.txt) - Enunciado original del trabajo
-
-- [ESTADO.md](../ESTADO.md)
 

@@ -1,5 +1,5 @@
 defmodule ChatWeb.RouterTest do
-  use ExUnit.Case, async: false
+  use ChatApp.DataCase, async: false
   import Plug.Test
   import Plug.Conn
   alias ChatApp.{Accounts, ActivityServer, Repo}

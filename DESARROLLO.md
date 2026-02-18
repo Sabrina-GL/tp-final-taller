@@ -52,8 +52,8 @@ POST /api/register
 ChatWeb.Router.post("/api/register")
     ↓
 ChatApp.Accounts.register_user/2
-    ↓
-ChatApp.Repo.insert(User)  (persistencia en SQLite)
+  ↓
+ChatApp.Repo.insert(User)  (persistencia en PostgreSQL)
     ↓
 {:ok, user}  (respuesta)
 ```
@@ -66,7 +66,7 @@ ChatWeb.SocketHandler.websocket_handle/2
     ↓
 Parse JSON
     ↓
-ChatApp.ChatRoom.add_message/3
+ChatApp.ChatRoomServer.add_message/3
     ↓
 Broadcast a clientes conectados
 ```
@@ -82,7 +82,7 @@ ActivityServer actualiza estado online/offline y last_seen
 
 ## Mejoras Futuras
 
-### Persistencia (Ecto + SQLite)
+### Persistencia (Ecto + PostgreSQL)
 
 ```elixir
 # Crear migration
@@ -92,7 +92,11 @@ mix ecto.gen.migration create_users
 config :chat_app, ecto_repos: [ChatApp.Repo]
 
 config :chat_app, ChatApp.Repo,
-  database: "chat_app.db",
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  port: 5432,
+  database: "chat_app_dev",
   pool_size: 10
 ```
 
@@ -138,17 +142,17 @@ ChatApp.ChatManager.send_file(chat_id, user, file_binary)
 
 ### Tipos de Tests
 
-1. **Unit Tests**: Función → Resultado
+1. **Tests por archivo/módulo**
    ```bash
-   mix test --only unit
+  mix test test/accounts_test.exs
    ```
 
-2. **Integration Tests**: Flujo completo
+2. **Suite completa**
    ```bash
-   mix test --only integration
+  mix test
    ```
 
-3. **Property-Based Tests**
+3. **Property-Based Tests (opcional)**
    - Agregar dependencia `StreamData`
 
 ### Cobertura
@@ -156,9 +160,8 @@ ChatApp.ChatManager.send_file(chat_id, user, file_binary)
 mix test --cover
 ```
 
-Estado actual: 85.12% (133 tests)
-Objetivo original: >= 80% ✅ (superado)
-Nota: Cobertura se redujo ligeramente al integrar schemas Ecto, pero todos los módulos funcionales están ampliamente cubiertos (85-100%)
+La cobertura debe tomarse de la última corrida local.
+Objetivo original: >= 80% ✅
 
 ## Debugging
 
@@ -227,7 +230,7 @@ _build/prod/rel/chat_app/bin/chat_app start
 
 ### Docker (Opcional)
 
-El proyecto corre localmente con SQLite y no necesita Docker para desarrollo normal.
+El proyecto corre con PostgreSQL; Docker incluye el servicio de base de datos.
 Si prefieres workflow dockerizado (recomendado para entorno reproducible):
 
 ```bash

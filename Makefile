@@ -24,8 +24,8 @@ help:
 	@echo "  make test-watch       Ejecuta tests en modo watch"
 	@echo ""
 	@echo "$(GREEN)Base de Datos$(NC)"
-	@echo "  make db-reset         Limpia BD, crea nueva y migra (prepara para demo)"
-	@echo "  make db-clean         Solo elimina archivo chat_app_dev.db"
+	@echo "  make db-reset         Reinicia BD PostgreSQL (drop + create + migrate)"
+	@echo "  make db-clean         Elimina BD PostgreSQL de desarrollo"
 	@echo "  make demo-setup       Prepara BD para demo con instrucciones"
 	@echo ""
 	@echo "$(GREEN)Docker (opcional)$(NC)"
@@ -41,7 +41,7 @@ help:
 	@echo "$(GREEN)Limpieza$(NC)"
 	@echo "  make clean            Limpia artifacts (_build, .mix, etc)"
 	@echo "  make mrproper         Limpia TODO (deps, artifacts, BD)"
-	@echo "  make reset-all        Reinicio total (docker + SQLite + build + caches)"
+	@echo "  make reset-all        Reinicio total (docker + Postgres + build + caches)"
 	@echo ""
 
 # Desarrollo
@@ -84,22 +84,18 @@ test-watch:
 
 # Base de Datos
 db-reset:
-	@if command -v lsof >/dev/null 2>&1 && lsof /home/michael/Documentos/Facultad/Taller/tp-final-taller/chat_app/chat_app_dev.db >/dev/null 2>&1; then \
-		echo "$(YELLOW)⚠️  La BD está en uso por otro proceso.$(NC)"; \
-		echo "$(YELLOW)   Detén el servidor (Ctrl+C) y vuelve a ejecutar: make db-reset$(NC)"; \
-		exit 1; \
-	fi
 	@cd chat_app && \
-	echo "$(YELLOW)🗑️  Eliminando BD antigua...$(NC)" && \
-	rm -f chat_app_dev.db chat_app_dev.db-shm chat_app_dev.db-wal && \
-	echo "$(YELLOW)✨ Creando BD nueva...$(NC)" && \
+	echo "$(YELLOW)🗑️  Eliminando BD PostgreSQL (si existe)...$(NC)" && \
+	MIX_ENV=dev mix ecto.drop || true && \
+	echo "$(YELLOW)✨ Creando BD PostgreSQL...$(NC)" && \
 	mix ecto.create && \
 	echo "$(YELLOW)🚀 Migrando esquema...$(NC)" && \
 	mix ecto.migrate && \
 	echo "$(GREEN)✓ BD lista para usar$(NC)"
 
 db-clean:
-	@cd chat_app && rm -f chat_app_dev.db && echo "$(GREEN)✓ chat_app_dev.db eliminado$(NC)"
+	@cd chat_app && MIX_ENV=dev mix ecto.drop || true
+	@echo "$(GREEN)✓ BD de desarrollo eliminada$(NC)"
 
 demo-setup: db-reset
 	@echo ""
@@ -135,16 +131,13 @@ mrproper: clean db-clean
 
 reset-all:
 	@echo "$(YELLOW)♻️  Reinicio total del proyecto...$(NC)"
-	@if command -v lsof >/dev/null 2>&1 && lsof /home/michael/Documentos/Facultad/Taller/tp-final-taller/chat_app/chat_app_dev.db >/dev/null 2>&1; then \
-		echo "$(YELLOW)⚠️  Detecté la BD en uso. Cerrá el servidor (Ctrl+C) y vuelve a ejecutar make reset-all.$(NC)"; \
-		exit 1; \
-	fi
 	@docker compose down -v >/dev/null 2>&1 || echo "$(YELLOW)⚠️  No se pudo bajar docker (permiso o no estaba levantado).$(NC)"
-	@cd chat_app && rm -f chat_app_dev.db chat_app_dev.db-shm chat_app_dev.db-wal chat_app_test.db
+	@cd chat_app && MIX_ENV=dev mix ecto.drop || true
+	@cd chat_app && MIX_ENV=test mix ecto.drop || true
 	@rm -rf chat_app/_build chat_app/.mix __pycache__ .pytest_cache
 	@find . -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
 	@echo "$(GREEN)✓ Reset completo terminado$(NC)"
-	@echo "$(YELLOW)Siguiente paso sugerido: make setup$(NC)"
+	@echo "$(YELLOW)Siguiente paso sugerido: make setup-dockerized$(NC)"
 
 docker-up:
 	@docker compose up -d || sg docker -c "docker compose up -d" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make setup-dockerized-sudo$(NC)" && exit 1)

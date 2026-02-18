@@ -1,18 +1,41 @@
 services:
+  postgres:
+    image: postgres:17
+    container_name: chat_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chat_app_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chat_app_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
   chat_app:
     build:
       context: ./chat_app
       dockerfile: Dockerfile
     container_name: chat_app
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       MIX_ENV: dev
-      CHAT_APP_DB_PATH: /app/data/chat_app_dev.db
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chat_app_dev
       AUTO_MIGRATE_ON_START: "true"
     ports:
       - "4000:4000"
-    volumes:
-      - chat_app_data:/app/data
     restart: unless-stopped
 
 volumes:
-  chat_app_data:
+  postgres_data:

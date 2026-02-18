@@ -1,5 +1,5 @@
 defmodule ChatWeb.SocketHandlerBasicTest do
-  use ExUnit.Case, async: false
+  use ChatApp.DataCase, async: false
   alias ChatWeb.SocketHandler
 
   setup do

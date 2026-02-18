@@ -1,5 +1,5 @@
 defmodule ChatAppTest do
-  use ExUnit.Case, async: false
+  use ChatApp.DataCase, async: false
 
   setup do
     # Clear database before each test

@@ -8,7 +8,7 @@
       "type": "mix_task",
       "name": "mix (Default task)",
       "request": "launch",
-      "projectDir": "${workspaceRoot}"
+      "projectDir": "${workspaceRoot}/chat_app"
     },
     {
       "type": "mix_task",
@@ -19,7 +19,7 @@
         "--trace"
       ],
       "startApps": true,
-      "projectDir": "${workspaceRoot}",
+      "projectDir": "${workspaceRoot}/chat_app",
       "requireFiles": [
         "test/**/test_helper.exs",
         "test/**/*_test.exs"

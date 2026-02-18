@@ -34,6 +34,8 @@ make docker-reset              # reinicia contenedores y volumenes
 ```
 
 Alternativa local (sin Docker): `make setup && make demo-setup`
+Requiere Postgres local corriendo (por defecto `localhost:5432`) y variables `POSTGRES_*`
+si no usas los valores por defecto (`postgres/postgres`, DB `chat_app_dev`).
 
 ### Demo en Vivo
 
@@ -71,80 +73,112 @@ python3 client.py
 
 **Mostrar todas las features obligatorias**:
 
-#### 1. Contactos (Alice)
+#### 1. Ver contactos (Alice)
+```
+Opción: 1 (Ver contactos)
+→ Lista vacía inicialmente
+```
+
+#### 2. Agregar contacto (Alice)
 ```
 Opción: 2 (Agregar contacto)
 Usuario: bob
 → Verás confirmación en ambos terminales
+→ Se crea automáticamente chat alice:bob
 ```
 
-#### 2. Ver chats creados (Alice)
+#### 3. Ver chats creados (Alice)
 ```
-Opción: 3 (Ver chats)
+Opción: 4 (Ver chats)
 → Mostrará: alice:bob (creado automáticamente)
 ```
 
-#### 3. Enviar mensaje (Alice → Bob)
+#### 4. Enviar mensaje (Alice → Bob)
 ```
-Opción: 5 (Enviar mensaje)
+Opción: 6 (Enviar mensaje)
 ID del chat: alice:bob
 Mensaje: Hola Bob, cómo estás?
 → Bob recibirá notificación inmediata
 ```
 
-#### 4. Ver mensajes (Bob)
+#### 5. Ver mensajes (Bob)
 ```
-Opción: 6 (Ver mensajes)
+Opción: 7 (Ver mensajes de un chat)
 ID del chat: alice:bob
 → Mostrará el mensaje de Alice
 ```
 
-#### 5. Chat grupal (Bob)
+#### 6. Chat grupal (Bob)
 ```
-Opción: 4 (Crear grupo)
+Opción: 5 (Crear chat grupal)
 Nombre: equipo
-Participantes: alice, charlie
+Participantes: alice
 → Notificaciones a todos los participantes
 ```
 
-#### 6. Estado de usuario (Alice)
+#### 7. Buscar mensajes en un chat (Bob)
 ```
-Opción: 8 (Ver estado)
-Usuario: bob
-→ Mostrará: online, last_seen
+Opción: 8 (Buscar mensajes en un chat)
+ID del chat: alice:bob
+Palabra clave: Hola
+→ Mostrará mensajes que contengan "Hola"
 ```
 
-#### 7. Desconectar Bob
+#### 8. Ver estado de usuario (Alice)
+```
+Opción: 11 (Ver estado de un usuario)
+Usuario: bob
+→ Mostrará: online, last_seen, blocked_by (si aplica)
+```
+
+#### 9. Bloquear contacto (Bob bloquea Alice)
+```
+Opción: 3 (Bloquear contacto)
+Usuario a bloquear: alice
+→ 🚫 alice ha sido bloqueado/a
+→ Alice no podrá enviar mensajes a Bob
+```
+
+#### 10. Eliminar un mensaje (Alice)
+```
+Opción: 9 (Eliminar un mensaje)
+ID del chat: alice:bob
+ID del mensaje a eliminar: 1
+→ El mensaje se elimina de la BD y memoria
+```
+
+#### 11. Enviar múltiples mensajes para luego eliminarlos (Alice)
+```
+Opción: 6 (Enviar mensaje)
+Envía 3 mensajes diferentes en el chat alice:bob
+→ Nota los IDs de cada mensaje
+```
+
+#### 12. Eliminar múltiples mensajes (Alice)
+```
+Opción: 10 (Eliminar múltiples mensajes)
+ID del chat: alice:bob
+IDs de mensajes (separados por coma): 2,3,4
+→ Los mensajes se eliminan de forma lote
+```
+
+#### 13. Desconectar Bob
 ```
 Opción: 12 (Salir)
 ```
 
-#### 8. Enviar mensaje mientras Bob offline (Alice)
+#### 14. Enviar mensaje mientras Bob offline (Alice)
 ```
-Opción: 6
+Opción: 6 (Enviar mensaje)
 ID: alice:bob
 Mensaje: ¿Listo para la reunión?
+→ El mensaje se guarda en cola offline
 ```
 
-#### 9. Reconectar Bob
+#### 15. Reconectar Bob
 ```
 Login nuevamente como bob
 → Recibirás automáticamente los mensajes pendientes (cola offline)
-```
-
-#### 10. Bloquear contacto (Bob bloquea Alice)
-```
-Opción: 3
-Usuario a bloquear: alice
-🚫 Bloqueando a: alice
-```
-
-#### 11. Eliminar mensaje (Alice)
-```
-Opción: 9
-ID del chat: alice:bob
-ID del mensaje a eliminar: 1
-→ El mensaje se elimina de la BD y memoria
 ```
 
 ### Features Demostradas ✅
@@ -153,12 +187,12 @@ ID del mensaje a eliminar: 1
 - ✅ Autenticación
 - ✅ Estado de conexión (online/offline/last_seen)
 - ✅ Lista de contactos
-- ✅ **Bloqueo de contactos (bidireccional)**
+- ✅ **Bloqueo de contactos (bidireccional)** - Opción 3
 - ✅ Chats 1-a-1 (automáticos al agregar contacto)
-- ✅ Chats grupales
-- ✅ Últimos 10 mensajes
-- ✅ Búsqueda por keyword
-- ✅ **Eliminación de mensajes (simple y lote)**
+- ✅ Chats grupales - Opción 5
+- ✅ Últimos 10 mensajes - Opción 7
+- ✅ Búsqueda por keyword - Opción 8
+- ✅ **Eliminación de mensajes (simple y lote)** - Opciones 9 y 10
 - ✅ Notificaciones en tiempo real
 - ✅ Cola de notificaciones offline
 
@@ -177,7 +211,13 @@ http://localhost:4000
 cd tp-final-taller
 make test
 ```
-→ Mostrará: 133 tests, 85.12% cobertura, todos ✅
+→ Debe finalizar sin failures
+
+Para cobertura:
+```bash
+cd chat_app
+mix test --cover
+```
 
 ### Troubleshooting Durante la Demo
 
@@ -188,9 +228,9 @@ make test
 **Error: "Usuario ya existe"**
 - Usar otros nombres: carol, dave, eve, etc.
 
-**Error: `no such table: contacts` (o tablas faltantes)**
+**Error: `relation "contacts" does not exist` (o tablas faltantes)**
 - Si estás usando Docker: `make docker-reset`
-- Si estás en local: en `chat_app/` ejecutar `mix ecto.create && mix ecto.migrate`
+- Si estás en local: en `chat_app/` ejecutar `mix ecto.drop && mix ecto.create && mix ecto.migrate`
 - Reiniciar servidor
 
 **Error Docker: `permission denied /var/run/docker.sock`**
@@ -214,7 +254,7 @@ make test
 2. **WebSocket bidireccional**: Cliente ↔ Servidor
 3. **Notificaciones real-time**: Sin polling
 4. **Cola offline inteligente**: Guarda y entrega al reconectar
-5. **Tests robustos**: 85.12% cobertura
+5. **Tests robustos**: suite automatizada + cobertura ejecutable con `mix test --cover`
 6. **Cliente por consola funcional**: Todas las features accesibles
 
 ---
