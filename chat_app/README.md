@@ -6,18 +6,22 @@ Servidor de chat en tiempo real construido con Elixir + OTP. Usa WebSocket (Cowb
 
 ## Features Implementadas
 
-### Básicas (Mandatorias)
-- ✅ Autenticación de usuarios (registro + login)
-- ✅ Chats privados entre dos usuarios
-- ✅ Chats grupales
-- ✅ Envío y recepción de mensajes en tiempo real
+- ✅ Autenticación de usuarios (registro + login con hash Bcrypt)
+- ✅ Estado de conexión (online/offline/last_seen)
+- ✅ Lista de contactos (agregar, listar, bloquear)
+- ✅ Chats privados 1-a-1 (creación automática)
+- ✅ Chats grupales (múltiples participantes)
+- ✅ Envío de mensajes en tiempo real
+- ✅ **Envío de archivos e imágenes** (Base64 over WebSocket, límite 5MB)
 - ✅ Historial de mensajes persistente (PostgreSQL)
-- ✅ Con estatus online/offline
-- ✅ Búsqueda de mensajes
-
-### Opcionales (Implementadas)
-- ✅ **Bloqueo de contactos** - Bidireccional con validación en creación de chats
-- ✅ **Eliminación de mensajes** - Simple o en lote
+- ✅ Últimos 10 mensajes por conversación
+- ✅ Búsqueda de mensajes por palabra clave
+- ✅ **Bloqueo de contactos** (bidireccional con validación)
+- ✅ **Eliminación de mensajes** (simple o en lote)
+- ✅ Notificaciones en tiempo real
+- ✅ Cola de notificaciones offline
+- ✅ Cliente web (HTML/CSS/JS)
+- ✅ Cliente por consola (Python)
 
 ## Requisitos
 
@@ -133,6 +137,7 @@ Mensajes soportados (JSON):
 #### Manejo de mensajes
 - `get_messages` - Obtiene historial de un chat
 - `send_message` - Envía mensaje (falla si remitente está bloqueado)
+- `send_file` - Envía archivo/imagen (Base64, límite 5MB)
 - `delete_message` - Borra un mensaje por ID
 - `delete_messages` - Borra múltiples mensajes
 
@@ -257,6 +262,7 @@ mix dialyzer
   - Mensajería y búsqueda
   - **Bloqueo de contactos (bidireccional)**
   - **Eliminación de mensajes (simple y lote)**
+  - **Envío de archivos (Base64 over WebSocket)**
   - API WebSocket
   - Validaciones de schema
 

@@ -126,44 +126,30 @@ ESTADO.md          # Estado del proyecto
 
 ## Caracteristicas implementadas
 
-### Core ✅
 - ✅ Alta de usuarios con validaciones (username ≥3 chars, password ≥6 chars)
 - ✅ Autenticación con hash de password (Bcrypt)
 - ✅ Usuarios y credenciales persistidos en PostgreSQL (Ecto ORM)
 - ✅ Estado de conexión (online/offline y last_seen)
-- ✅ Lista de contactos (agregar y listar)
+- ✅ Lista de contactos (agregar, listar, bloquear)
 - ✅ Chats individuales (creación automática al agregar contacto)
 - ✅ Chats grupales (múltiples participantes)
-
-### Mensajes ✅
 - ✅ Últimos 10 mensajes en cada conversación (persistidos en PostgreSQL)
 - ✅ Búsqueda de mensajes por palabra clave
+- ✅ **Envío de archivos e imágenes** (Base64 over WebSocket, límite 5MB)
 - ✅ Validación de participantes (rechaza mensajes de no-participantes)
+- ✅ **Bloqueo de contactos** (bidireccional)
+- ✅ **Eliminación de mensajes** (simple y en lote)
 - ✅ Notificaciones en tiempo real (excepto al remitente)
 - ✅ Cola de notificaciones offline con entrega automática al reconectar
 - ✅ Historial completo de mensajes en base de datos (no se pierden en reinicios)
-
-### API y WebSocket ✅
-- ✅ REST: POST /api/register, POST /api/login
-- ✅ REST: GET /api/status?user=usuario (estado de conexión)
-- ✅ WebSocket: get_contacts, get_chatrooms, get_messages, get_status, add_contact, block_contact, create_group_chat, send_message, search_messages, delete_message, delete_messages
-
-### Testing ✅
-- ✅ Suite de tests unitarios y de integración
-- ✅ Cobertura de código disponible con `mix test --cover`
-- ✅ Tests para: Accounts, ChatManager, ChatRoomServer, ActivityServer, Notifications, Router, SocketHandler
-
-### Cobertura de tests (resumen) ✅
-- Reporte basado en la última ejecución de `mix test --cover`
-- La cobertura puede variar según cambios recientes en código y tests
-- Ver detalle actualizado en `COBERTURA_TESTS.md`
-
-### Opcionales
+- ✅ REST: POST /api/register, POST /api/login, GET /api/status
+- ✅ WebSocket: 12 acciones (get_contacts, add_contact, block_contact, create_group_chat, send_message, send_file, get_messages, search_messages, delete_message, delete_messages, get_chatrooms, get_status)
+- ✅ Suite de tests unitarios y de integración (133 tests)
+- ✅ Cobertura de código disponible con `mix test --cover` (~80%)
 - ✅ Front-end HTML/CSS con WebSocket (básico funcional)
 - ✅ Cliente por consola interactivo (Python con WebSocket)
-- ✅ Bloquear contactos
-- ✅ Borrar mensajes
-- ⏳ Envío de imágenes/archivos
+
+### Pendiente
 - ⏳ Backups de mensajes
 
 ## Estado del proyecto

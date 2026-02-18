@@ -106,6 +106,29 @@ defmodule ChatWeb.SocketHandler do
               %{status: :ok, message: message}
           end
 
+        "send_file" ->
+          # Validate required fields
+          with {:ok, file_content} <- validate_field(data, "file_content"),
+               {:ok, file_name} <- validate_field(data, "file_name"),
+               {:ok, file_type} <- validate_field(data, "file_type"),
+               {:ok, chat_id} <- validate_field(data, "chat_id") do
+            file_data = %{
+              base64_content: file_content,
+              filename: file_name,
+              mime_type: file_type
+            }
+
+            case ChatRoomServer.add_message(chat_id, state.user, nil, file_data: file_data) do
+              {:error, reason} ->
+                %{status: :error, error: reason}
+
+              message ->
+                %{status: :ok, message: message, type: :file}
+            end
+          else
+            {:error, field} -> %{status: :error, error: "Missing required field: #{field}"}
+          end
+
         "search_messages" ->
           case ChatRoomServer.search_messages(data["chat_id"], data["query"]) do
             {:ok, messages} -> %{messages: messages}
@@ -147,6 +170,15 @@ defmodule ChatWeb.SocketHandler do
 
   def websocket_info(_info, state) do
     {:ok, state}
+  end
+
+  # Private helper function
+  defp validate_field(data, field_name) do
+    case Map.get(data, field_name) do
+      nil -> {:error, field_name}
+      "" -> {:error, field_name}
+      value -> {:ok, value}
+    end
   end
 
   def terminate(_reason, _request, state) do

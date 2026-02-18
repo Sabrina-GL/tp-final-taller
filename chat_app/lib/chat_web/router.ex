@@ -101,6 +101,19 @@ defmodule ChatWeb.Router do
     end
   end
 
+  get "/uploads/:filename" do
+    filename = conn.params["filename"]
+    file_path = ChatApp.FileManager.get_file_path("uploads/#{filename}")
+
+    if File.exists?(file_path) do
+      conn
+      |> Plug.Conn.put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+      |> send_file(200, file_path)
+    else
+      send_resp(conn, 404, "File not found")
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "not found")
   end

@@ -15,8 +15,8 @@ defmodule ChatApp.ChatRoomServer do
     {:via, Registry, {ChatApp.ChatRoomsRegistry, chat_id}}
   end
 
-  def add_message(chat_id, from, text) do
-    GenServer.call(via_tuple(chat_id), {:add_message, from, text})
+  def add_message(chat_id, from, text, opts \\ []) do
+    GenServer.call(via_tuple(chat_id), {:add_message, from, text, opts})
   end
 
   def delete_message(chat_id, requester, message_id) do
@@ -78,36 +78,74 @@ defmodule ChatApp.ChatRoomServer do
     |> limit(10)
     |> Repo.all()
     |> Enum.map(fn msg ->
-      %{
+      base_msg = %{
         id: msg.id,
         from: msg.from_user,
         msg_content: msg.content,
         timestamp: msg.timestamp
       }
+
+      # Add file fields if present
+      if msg.file_path do
+        Map.merge(base_msg, %{
+          file_type: msg.file_type,
+          file_name: msg.file_name,
+          file_path: msg.file_path,
+          file_size: msg.file_size
+        })
+      else
+        base_msg
+      end
     end)
     |> Enum.reverse()
   end
 
-  def handle_call({:add_message, from, text}, _from, state) do
+  def handle_call({:add_message, from, text, opts}, _from, state) do
     with true <- Enum.member?(state.participants, from),
          {:ok, _} <- Accounts.get_user(from),
          false <- Accounts.blocked_with_any?(from, state.participants) do
       timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
+      # Handle file upload if present
+      file_data = Keyword.get(opts, :file_data)
+
+      {file_attrs, message_content} =
+        if file_data do
+          case save_uploaded_file(file_data) do
+            {:ok, %{path: path, size: size}} ->
+              attrs = %{
+                file_type: file_data.mime_type,
+                file_name: file_data.filename,
+                file_path: path,
+                file_size: size
+              }
+              {attrs, text || "[File: #{file_data.filename}]"}
+            {:error, reason} ->
+              # If file upload fails, return error
+              {:reply, {:error, reason}, state}
+              |> then(fn result -> throw(result) end)
+          end
+        else
+          {%{}, text}
+        end
+
       message = %{
         from: from,
-        msg_content: text,
+        msg_content: message_content,
         timestamp: timestamp
       }
+      |> Map.merge(file_attrs)
 
       # Persist message to database
-      db_changeset =
-        Message.changeset(%Message{}, %{
-          chat_id: state.chat_id,
-          from_user: from,
-          content: text,
-          timestamp: timestamp
-        })
+      db_attrs = %{
+        chat_id: state.chat_id,
+        from_user: from,
+        content: message_content,
+        timestamp: timestamp
+      }
+      |> Map.merge(file_attrs)
+
+      db_changeset = Message.changeset(%Message{}, db_attrs)
 
       case Repo.insert(db_changeset) do
         {:ok, db_message} ->
@@ -136,12 +174,23 @@ defmodule ChatApp.ChatRoomServer do
       true -> {:reply, {:error, :contact_blocked}, state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
+  catch
+    result -> result
+  end
+
+  defp save_uploaded_file(%{base64_content: base64, filename: filename, mime_type: mime_type}) do
+    ChatApp.FileManager.save_file(base64, filename, mime_type)
   end
 
   def handle_call({:delete_message, requester, message_id}, _from, state) do
     with true <- Enum.member?(state.participants, requester),
          %Message{} = message <- Repo.get(Message, message_id),
          true <- message.chat_id == state.chat_id do
+      # Delete physical file if present
+      if message.file_path do
+        ChatApp.FileManager.delete_file(message.file_path)
+      end
+
       Repo.delete(message)
 
       new_messages = Enum.reject(state.messages, fn msg -> msg.id == message_id end)
@@ -156,6 +205,18 @@ defmodule ChatApp.ChatRoomServer do
   def handle_call({:delete_messages, requester, message_ids}, _from, state) do
     with true <- Enum.member?(state.participants, requester),
          true <- is_list(message_ids) do
+      # Delete physical files if present
+      messages_to_delete =
+        Message
+        |> where([m], m.chat_id == ^state.chat_id and m.id in ^message_ids)
+        |> Repo.all()
+
+      Enum.each(messages_to_delete, fn msg ->
+        if msg.file_path do
+          ChatApp.FileManager.delete_file(msg.file_path)
+        end
+      end)
+
       {deleted_count, _} =
         Message
         |> where([m], m.chat_id == ^state.chat_id and m.id in ^message_ids)

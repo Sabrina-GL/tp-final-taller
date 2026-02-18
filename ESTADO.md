@@ -50,8 +50,22 @@ Acciones disponibles:
 - `get_messages` - Obtener mensajes de un chat
 - `get_status` - Consultar estado de un usuario
 - `add_contact` - Agregar contacto (crea chat automáticamente)
+- `block_contact` - Bloquear contacto (bidireccional)
 - `create_group_chat` - Crear chat grupal
 - `send_message` - Enviar mensaje (con manejo de errores)
+- `send_file` - Enviar archivo/imagen (Base64, max 5MB)
+- `search_messages` - Buscar mensajes por palabra clave
+- `delete_message` - Eliminar un mensaje
+- `delete_messages` - Eliminar múltiples mensajes
+
+### Archivos
+- Sistema de envío de archivos con Base64 over WebSocket
+- ChatApp.FileManager - Módulo para gestión de archivos (validación, almacenamiento, limpieza)
+- Límite de 5MB por archivo
+- Tipos permitidos: imágenes (png, jpeg, gif, webp), documentos (pdf, txt, doc, docx, xls, xlsx)
+- Almacenamiento en filesystem (`priv/uploads/`) con nombres UUID
+- Endpoint HTTP GET /uploads/:filename para descargas
+- Limpieza automática de archivos al eliminar mensajes
 
 ### Notificaciones y estado
 - Sistema de notificaciones en tiempo real vía WebSocket
@@ -102,13 +116,12 @@ Acciones disponibles:
 - **Eliminado**: Código muerto (función `open_chat_room/2`)
 - **Eliminado**: Warnings de compilación (variable `pid` sin usar)
 
-## ⏳ Pendiente (features opcionales de la consigna)
+## ⏳ Pendiente
 
-### Opcionales no implementados
-- ❌ Envío de archivos/imágenes
+### Feature no implementado
 - ❌ Backups de mensajes
 
-**NOTA**: Todos los requisitos obligatorios de la consigna están completos, incluyendo el cliente por consola.
+**NOTA**: El proyecto implementa todos los requisitos obligatorios de la consigna, y todas las features opcionales excepto backups. Total: 15 de 16 features implementadas (94%).
 
 ## 📋 Próximos pasos sugeridos (en orden de prioridad)
 
@@ -121,9 +134,8 @@ Acciones disponibles:
 - Añadir alertas de salud (estado de supervisores/procesos clave)
 - Incorporar tests de estrés para reconexiones y cola offline
 
-### 3. Features opcionales
-- Envío de archivos (Base64 vía WebSocket)
-- Backups automáticos
+### 3. Feature pendiente
+- Backups automáticos de mensajes
 
 ## 📊 Estado vs Consigna
 

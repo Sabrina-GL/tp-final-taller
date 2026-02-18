@@ -90,7 +90,8 @@ Al iniciar verás:
 9. Eliminar un mensaje        → Borra un mensaje por ID
 10. Eliminar múltiples mensajes → Borra varios mensajes de una vez
 11. Ver estado de un usuario  → Muestra online/offline/last_seen
-12. Salir                     → Cierra sesión
+12. Enviar archivo/imagen     → Sube un archivo al chat (límite 5MB)
+13. Salir                     → Cierra sesión
 ```
 
 ## 📝 Ejemplos de Uso
@@ -173,6 +174,26 @@ Usuario: bob
 📊 Obteniendo estado de bob...
 ```
 
+### 11. Enviar archivo/imagen
+```
+Opción: 12
+ID del chat: alice:bob
+Ruta del archivo: /tmp/documento.pdf
+📎 Enviando archivo documento.pdf...
+```
+*Nota: Límite de 5MB. Tipos permitidos: imágenes (png, jpeg, gif, webp), documentos (pdf, txt, doc, docx, xls, xlsx).*
+
+El archivo se codifica en Base64 y se envía vía WebSocket. El receptor verá:
+```
+💬 MENSAJE NUEVO:
+   De: alice
+  Chat: alice:bob
+   📎 ARCHIVO: documento.pdf
+   Tipo: application/pdf
+   Tamaño: 245.3 KB
+   Descargar: http://localhost:4000/uploads/<uuid>-documento.pdf
+```
+
 ## 🔔 Notificaciones
 
 El cliente recibe notificaciones en tiempo real:
@@ -230,11 +251,15 @@ Todas las acciones siguen el formato:
 Acciones soportadas:
 - `get_contacts` - Lista contactos
 - `add_contact` - Agrega contacto
+- `block_contact` - Bloquea contacto
 - `get_chatrooms` - Lista chats
 - `create_group_chat` - Crea grupo
 - `send_message` - Envía mensaje
+- `send_file` - Envía archivo (Base64)
 - `get_messages` - Obtiene mensajes
 - `search_messages` - Busca mensajes
+- `delete_message` - Elimina un mensaje
+- `delete_messages` - Elimina múltiples mensajes
 - `get_status` - Estado de usuario
 
 ## 📊 Features Implementadas
@@ -245,6 +270,7 @@ Acciones soportadas:
 ✅ Chats individuales automáticos  
 ✅ Chats grupales con múltiples participantes  
 ✅ Envío de mensajes  
+✅ **Envío de archivos e imágenes (Base64 over WebSocket, límite 5MB)**  
 ✅ Ver últimos 10 mensajes  
 ✅ Búsqueda de mensajes por palabra clave  
 ✅ **Eliminación de mensajes (simple y lote)**  

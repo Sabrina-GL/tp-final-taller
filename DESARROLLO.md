@@ -120,7 +120,7 @@ end
 - [ ] Limpieza de salas vacías
 - [ ] Rate limiting
 
-### Características Opcionales
+### Características Avanzadas
 
 #### Bloquear Contactos
 ```elixir
@@ -135,7 +135,10 @@ ChatApp.ChatManager.delete_message(chat_id, message_id)
 
 #### Envío de Archivos
 ```elixir
-ChatApp.ChatManager.send_file(chat_id, user, file_binary)
+# Implementado con Base64 over WebSocket
+# ChatApp.FileManager - Módulo para gestión de archivos
+# ChatWeb.SocketHandler - Action: send_file
+# Ver ejemplos en client.py (método send_file)
 ```
 
 ## Testing

@@ -104,11 +104,21 @@ class ChatClient:
                     print(f"   Chat: {data.get('room_id')}")
                 print()
                 
-            elif data.get("type") == "new_message":
+            elif data.get("type") == "new_message" or data.get("status") == "new_message":
+                message_data = data.get("message", {})
                 print(f"\n💬 MENSAJE NUEVO:")
-                print(f"   De: {data.get('from', 'Desconocido')}")
-                print(f"   Chat: {data.get('room_id', 'Desconocido')}")
-                print(f"   Contenido: {data.get('content', '')}")
+                print(f"   De: {message_data.get('from', 'Desconocido')}")
+                print(f"   Chat: {data.get('chat_id', 'Desconocido')}")
+                
+                # Check if it's a file message
+                if message_data.get('file_name'):
+                    print(f"   📎 ARCHIVO: {message_data.get('file_name')}")
+                    print(f"      Tipo: {message_data.get('file_type', 'desconocido')}")
+                    print(f"      Tamaño: {message_data.get('file_size', 0)} bytes")
+                    if message_data.get('file_path'):
+                        print(f"      URL: http://localhost:4000/{message_data.get('file_path')}")
+                else:
+                    print(f"   Contenido: {message_data.get('msg_content', '')}")
                 print()
                 
             elif data.get("status") == "ok" or data.get("status") == "success":
@@ -233,6 +243,53 @@ class ChatClient:
         })
         time.sleep(0.3)
     
+    def send_file(self, room_id, file_path):
+        """Envía un archivo a un chat"""
+        import base64
+        import mimetypes
+        import os
+        
+        # Verificar que el archivo existe
+        if not os.path.exists(file_path):
+            print(f"❌ Error: El archivo '{file_path}' no existe")
+            return False
+        
+        # Obtener tamaño del archivo
+        file_size = os.path.getsize(file_path)
+        max_size = 5 * 1024 * 1024  # 5MB
+        
+        if file_size > max_size:
+            print(f"❌ Error: El archivo es muy grande ({file_size} bytes). Máximo permitido: {max_size} bytes (5MB)")
+            return False
+        
+        # Detectar tipo MIME
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+        
+        # Leer y codificar archivo en base64
+        try:
+            with open(file_path, "rb") as f:
+                file_content = f.read()
+                base64_content = base64.b64encode(file_content).decode('utf-8')
+            
+            filename = os.path.basename(file_path)
+            
+            print(f"\n📤 Enviando archivo '{filename}' ({file_size} bytes, {mime_type})...")
+            
+            self.send_action("send_file", {
+                "chat_id": room_id,
+                "file_content": base64_content,
+                "file_name": filename,
+                "file_type": mime_type
+            })
+            time.sleep(0.5)
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error al leer el archivo: {e}")
+            return False
+    
     def disconnect(self):
         """Cierra la conexión"""
         if self.ws:
@@ -256,7 +313,8 @@ def print_menu():
     print("9.  Eliminar un mensaje")
     print("10. Eliminar múltiples mensajes")
     print("11. Ver estado de un usuario")
-    print("12. Salir")
+    print("12. Enviar archivo/imagen")
+    print("13. Salir")
     print("="*50)
 
 def print_welcome():
@@ -357,6 +415,11 @@ def main():
                         client.get_status(target_user)
                         
                     elif menu_opcion == "12":
+                        room_id = input("ID del chat: ").strip()
+                        file_path = input("Ruta del archivo: ").strip()
+                        client.send_file(room_id, file_path)
+                        
+                    elif menu_opcion == "13":
                         client.disconnect()
                         break
                     else:

@@ -181,6 +181,16 @@ Login nuevamente como bob
 → Recibirás automáticamente los mensajes pendientes (cola offline)
 ```
 
+#### 16. Enviar archivo/imagen (Alice)
+```
+Opción: 12 (Enviar archivo/imagen)
+ID del chat: alice:bob
+Ruta del archivo: /tmp/test.png
+→ El archivo se sube, se codifica y se envía como mensaje
+→ Bob recibe notificación con 📎 ARCHIVO: test.png
+→ Archivo descargable vía: http://localhost:4000/uploads/<uuid>-test.png
+```
+
 ### Features Demostradas ✅
 
 - ✅ Alta de usuarios con validación
@@ -193,6 +203,7 @@ Login nuevamente como bob
 - ✅ Últimos 10 mensajes - Opción 7
 - ✅ Búsqueda por keyword - Opción 8
 - ✅ **Eliminación de mensajes (simple y lote)** - Opciones 9 y 10
+- ✅ **Envío de archivos e imágenes** - Opción 12
 - ✅ Notificaciones en tiempo real
 - ✅ Cola de notificaciones offline
 
