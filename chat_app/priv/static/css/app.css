@@ -306,6 +306,51 @@
     z-index: 10;
 }
 
+.chat-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+}
+
+.chat-search {
+    display: flex;
+    gap: 5px;
+}
+
+.chat-search input {
+    padding: 5px 10px;
+    border: 1px solid #D5CFF6;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 200px;
+}
+
+.chat-search input:focus {
+    outline: none;
+    border-color: #9f94e6;
+}
+
+.chat-search button {
+    background-color: #D5CFF6;
+    color: #5A595D;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.chat-search button:hover {
+    background-color: #FEECBC;
+}
+
+.chat-message.highlight {
+    background-color: #fff3cd;
+}
+
+/* Messages */
+
 .chat-messages {
     flex: 1;
     padding: 20px;

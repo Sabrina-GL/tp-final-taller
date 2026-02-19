@@ -198,8 +198,14 @@ defmodule ChatWeb.SocketHandler do
 
         "search_messages" ->
           case ChatRoomServer.search_messages(data["chat_id"], data["query"]) do
-            {:ok, messages} -> %{messages: messages}
-            {:error, reason} -> %{status: :error, error: reason}
+            {:error, reason} ->
+              %{status: :error, error: reason}
+
+            messages ->
+              %{
+                search_results: messages,
+                query: data["query"]
+              }
           end
 
         "delete_message" ->

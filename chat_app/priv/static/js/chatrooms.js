@@ -1,4 +1,7 @@
 // chatrooms.js
+let searchResults = [];
+let currentSearchIndex = -1;
+
 function getChatRooms() {
     window.ws.send(JSON.stringify({ action: "get_chatrooms" }));
 }
@@ -49,6 +52,7 @@ function renderMessage(message) {
     const messagesContainer = document.getElementById("chat-messages");
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("chat-message");
+    msgDiv.setAttribute("data-message-id", message.id);
 
     if (message.from === window.currentUser) {
         msgDiv.classList.add("chat-message-sent");
@@ -179,6 +183,127 @@ function createGroup() {
 
     closeGroupModal();
 }
+
+/* ========== Search in Chat =========== */
+
+function performSearch() {
+    const searchInput = document.getElementById('search-input');
+    const query = searchInput.value.trim();
+
+    if (!query || !window.currentChatRoom) {
+        alert('Ingresá un término para buscar');
+        return;
+    }
+
+    // Limpiar highlights anteriores
+    clearHighlights();
+
+    window.ws.send(JSON.stringify({
+        action: "search_messages",
+        chat_id: window.currentChatRoom,
+        query: query
+    }));
+}
+
+function renderSearchResults(messages) {
+    console.log("Resultados de búsqueda:", messages);
+
+    if (!messages || messages.length === 0) {
+        alert('No se encontraron mensajes');
+        return;
+    }
+
+    searchResults = messages;
+    currentSearchIndex = searchResults.length - 1; // Empezar por el último
+
+    clearHighlights();
+    highlightCurrentMessage();
+    goToSearchResult(currentSearchIndex);
+}
+
+function highlightCurrentMessage() {
+    if (searchResults.length === 0 || currentSearchIndex < 0) return;
+
+    const messageId = searchResults[currentSearchIndex].id;
+    const messageElement = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+
+    if (messageElement) {
+        messageElement.classList.add('highlight');
+    }
+}
+
+function clearHighlights() {
+    document.querySelectorAll('.chat-message').forEach(el => {
+        el.classList.remove('highlight');
+    });
+}
+
+function goToSearchResult(index) {
+    if (searchResults.length === 0) return;
+
+    // Asegurar índice válido
+    if (index < 0) index = searchResults.length - 1;
+    if (index >= searchResults.length) index = 0;
+
+    clearHighlights();
+    currentSearchIndex = index;
+    highlightCurrentMessage();
+
+    const messageId = searchResults[currentSearchIndex].id;
+    const messageElement = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+
+    if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    updateSearchCounter();
+}
+
+function nextSearchResult() {
+    goToSearchResult(currentSearchIndex + 1);
+}
+
+function prevSearchResult() {
+    goToSearchResult(currentSearchIndex - 1);
+}
+
+function updateSearchCounter() {
+    const counter = document.getElementById('search-counter');
+    if (counter) {
+        counter.textContent = `${currentSearchIndex + 1}/${searchResults.length}`;
+    }
+}
+
+function initSearch() {
+    const searchBtn = document.getElementById('search-btn');
+    const searchInput = document.getElementById('search-input');
+    const prevBtn = document.getElementById('prev-result');
+    const nextBtn = document.getElementById('next-result');
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performSearch);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', prevSearchResult);
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextSearchResult);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initSearch);
+document.getElementById('prev-result')?.addEventListener('click', prevSearchResult);
+document.getElementById('next-result')?.addEventListener('click', nextSearchResult);
 
 // Hacer funciones disponibles globalmente
 window.getChatRooms = getChatRooms;

@@ -119,7 +119,9 @@ defmodule ChatApp.ChatRoomServer do
                 file_path: path,
                 file_size: size
               }
+
               {attrs, text || "[File: #{file_data.filename}]"}
+
             {:error, reason} ->
               # If file upload fails, return error
               {:reply, {:error, reason}, state}
@@ -129,21 +131,23 @@ defmodule ChatApp.ChatRoomServer do
           {%{}, text}
         end
 
-      message = %{
-        from: from,
-        msg_content: message_content,
-        timestamp: timestamp
-      }
-      |> Map.merge(file_attrs)
+      message =
+        %{
+          from: from,
+          msg_content: message_content,
+          timestamp: timestamp
+        }
+        |> Map.merge(file_attrs)
 
       # Persist message to database
-      db_attrs = %{
-        chat_id: state.chat_id,
-        from_user: from,
-        content: message_content,
-        timestamp: timestamp
-      }
-      |> Map.merge(file_attrs)
+      db_attrs =
+        %{
+          chat_id: state.chat_id,
+          from_user: from,
+          content: message_content,
+          timestamp: timestamp
+        }
+        |> Map.merge(file_attrs)
 
       db_changeset = Message.changeset(%Message{}, db_attrs)
 
@@ -160,7 +164,11 @@ defmodule ChatApp.ChatRoomServer do
           # Notificar a todos los participantes excepto al remitente
           Enum.each(state.participants, fn participant ->
             if participant != from do
-              ChatApp.Notifications.notify_new_message(participant, state.chat_id, message_with_id)
+              ChatApp.Notifications.notify_new_message(
+                participant,
+                state.chat_id,
+                message_with_id
+              )
             end
           end)
 

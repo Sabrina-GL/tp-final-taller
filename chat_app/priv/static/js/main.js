@@ -63,6 +63,11 @@ function connectWebSocket(username) {
         if (msg.contacts) renderContacts(msg.contacts);
         if (msg.chatrooms) renderChatRooms(msg.chatrooms);
         if (msg.messages) renderChatRoomMessages(msg.messages);
+        if (msg.search_results) {
+            if (typeof window.renderSearchResults === 'function') {
+                window.renderSearchResults(msg.search_results);
+            }
+        }
         if (msg.blocked_contacts) renderBlockedContacts(msg.blocked_contacts);
         if (msg.status == "chat_opened") openChatRoom(msg.chat_id);
         if (msg.status == "new_message" && window.currentChatRoom === msg.chat_id) {
