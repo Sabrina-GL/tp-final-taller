@@ -22,12 +22,14 @@ function openSection(section) {
     const notificationsSection = document.getElementById("notifications-section");
     const contactsSection = document.getElementById("contacts-section");
     const chatRoomsSection = document.getElementById("chatrooms-section");
+    const blockedContactsSection = document.getElementById("blocked-contacts-section");
 
     sidebar.classList.add("open");
 
     notificationsSection.classList.add("hidden");
     contactsSection.classList.add("hidden");
     chatRoomsSection.classList.add("hidden");
+    blockedContactsSection.classList.add("hidden");
 
     if (section === "notifications") {
         notificationsSection.classList.remove("hidden");
@@ -35,6 +37,9 @@ function openSection(section) {
         contactsSection.classList.remove("hidden");
     } else if (section === "chatrooms") {
         chatRoomsSection.classList.remove("hidden");
+    } else if (section === "blocked-contacts") {
+        blockedContactsSection.classList.remove("hidden");
+        loadBlockedContacts();
     }
 
     window.activeSection = section;

@@ -301,9 +301,18 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert Registry.lookup(ChatApp.UsersRegistry, "alice") != []
     assert_receive {:initial_notifications, notifications}
     assert length(notifications) == 1
-    [notif] = notifications
-    assert notif.type == "new_chatroom"
-    assert notif.chat_id == "room1"
+
+    assert match?(
+             [
+               %{
+                 type: "new_chatroom",
+                 chat_id: "room1",
+                 id: _,
+                 timestamp: _
+               }
+             ],
+             notifications
+           )
   end
 
   test "websocket_handle ignores non-text frames" do

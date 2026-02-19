@@ -6,6 +6,7 @@ defmodule ChatAppTest do
     ChatApp.Repo.delete_all(ChatApp.Schemas.User)
     ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
     ChatApp.Repo.delete_all(ChatApp.Schemas.Chatroom)
+    ChatApp.Repo.delete_all(ChatApp.Schemas.Contact)
 
     # Clear in-memory metadata for accounts
     case :ets.whereis(:accounts_metadata) do
@@ -182,7 +183,7 @@ defmodule ChatAppTest do
     end
 
     test "group chat allows multiple members" do
-      {:ok, _} = ChatApp.ActivityServer.start_link("dave")
+      _ = ChatApp.ActivityServer.start_link("dave")
       ChatApp.Accounts.register_user("dave", "pass123")
       {:ok, chat_id} = ChatApp.ChatManager.create_group_chat("bob", "biggroup", ["carol", "dave"])
 

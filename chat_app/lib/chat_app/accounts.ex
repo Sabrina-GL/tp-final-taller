@@ -115,6 +115,22 @@ defmodule ChatApp.Accounts do
     end
   end
 
+  def get_blocked_contacts(username) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username) do
+      blocked_contacts =
+        Contact
+        |> where([c], c.user_id == ^user_id and c.status == "blocked")
+        |> join(:inner, [c], u in User, on: c.contact_id == u.id)
+        |> order_by([_c, u], asc: u.username)
+        |> select([_c, u], u.username)
+        |> Repo.all()
+
+      {:ok, blocked_contacts}
+    else
+      nil -> {:error, :user_not_found}
+    end
+  end
+
   def add_contact(username, contact) do
     if username == contact do
       {:error, :cannot_add_self}
@@ -171,6 +187,43 @@ defmodule ChatApp.Accounts do
       end
 
       :ok
+    else
+      nil -> {:error, :user_not_found}
+    end
+  end
+
+  def unblock_contact(username, contact) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username),
+         %User{id: contact_id} <- Repo.get_by(User, username: contact),
+         true <- interaction_blocked?(username, contact) do
+      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
+        nil ->
+          {:error, :contact_not_blocked}
+
+        relation ->
+          relation
+          |> Contact.changeset(%{status: "active"})
+          |> Repo.update()
+
+          :ok
+      end
+    else
+      nil -> {:error, :user_not_found}
+      false -> {:error, :contact_not_blocked}
+    end
+  end
+
+  def delete_contact(username, contact) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username),
+         %User{id: contact_id} <- Repo.get_by(User, username: contact) do
+      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
+        nil ->
+          {:error, :contact_not_found}
+
+        relation ->
+          Repo.delete(relation)
+          :ok
+      end
     else
       nil -> {:error, :user_not_found}
     end

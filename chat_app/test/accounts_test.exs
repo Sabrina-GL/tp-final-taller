@@ -63,7 +63,7 @@ defmodule AccountsTest do
     end
   end
 
-  describe "contacts" do
+  describe "get_contacts" do
     setup do
       # Setup test users
       Accounts.register_user("alice", "pass123")
@@ -78,6 +78,15 @@ defmodule AccountsTest do
 
     test "get_contacts for non-existent user returns error" do
       assert {:error, :user_not_found} = Accounts.get_contacts("nonexistent")
+    end
+  end
+
+  describe "add_contact" do
+    setup do
+      # Setup test users
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
+      :ok
     end
 
     test "add_contact adds a contact to user's contact list" do
@@ -101,6 +110,25 @@ defmodule AccountsTest do
     test "add_contact rejects duplicate contact" do
       assert :ok = Accounts.add_contact("alice", "bob")
       assert {:error, :contact_already_exists} = Accounts.add_contact("alice", "bob")
+    end
+
+    test "multiple contacts can be added" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.register_user("dave", "pass456")
+      assert :ok = Accounts.add_contact("alice", "bob")
+      assert :ok = Accounts.add_contact("alice", "charlie")
+      assert :ok = Accounts.add_contact("alice", "dave")
+      {:ok, contacts} = Accounts.get_contacts("alice")
+      assert length(contacts) == 3
+    end
+  end
+
+  describe "block_contact" do
+    setup do
+      # Setup test users
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
+      :ok
     end
 
     test "block_contact blocks interaction and prevents adding contact" do
@@ -137,57 +165,107 @@ defmodule AccountsTest do
     test "has_blocked_pair? returns false for single user" do
       assert not Accounts.has_blocked_pair?(["alice"])
     end
-
-    test "multiple contacts can be added" do
-      Accounts.register_user("charlie", "pass345")
-      Accounts.register_user("dave", "pass456")
-      assert :ok = Accounts.add_contact("alice", "bob")
-      assert :ok = Accounts.add_contact("alice", "charlie")
-      assert :ok = Accounts.add_contact("alice", "dave")
-      {:ok, contacts} = Accounts.get_contacts("alice")
-      assert length(contacts) == 3
-    end
   end
 
-  describe "account's chatrooms" do
+  describe "get_blocked_contacts" do
     setup do
-      Accounts.register_user("charlie", "pass345")
+      # Setup test users
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
       :ok
     end
 
-    # test "get_chatrooms returns empty list for new user" do
-    #   {:ok, chatrooms} = Accounts.get_chatrooms("charlie")
-    #   assert chatrooms == []
-    # end
+    test "get_blocked_contacts returns list of blocked contacts" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.block_contact("alice", "bob")
+      Accounts.block_contact("alice", "charlie")
+      {:ok, blocked} = Accounts.get_blocked_contacts("alice")
+      assert Enum.sort(blocked) == ["bob", "charlie"]
+    end
 
-    # test "get_chatrooms for non-existent user returns error" do
-    #   assert {:error, :user_not_found} = Accounts.get_chatrooms("nonexistent")
-    # end
+    test "get_blocked_contacts for user with no blocked contacts returns empty list" do
+      {:ok, blocked} = Accounts.get_blocked_contacts("bob")
+      assert blocked == []
+    end
 
-    # test "get_chatrooms returns list of chatrooms for user" do
-    #   Accounts.add_chatroom("charlie", "chat1")
-    #   Accounts.add_chatroom("charlie", "chat2")
-    #   {:ok, chatrooms} = Accounts.get_chatrooms("charlie")
-    #   assert "chat1" in chatrooms
-    #   assert "chat2" in chatrooms
-    # end
+    test "get_blocked_contacts for non-existent user returns error" do
+      assert {:error, :user_not_found} = Accounts.get_blocked_contacts("nonexistent")
+    end
 
-    # test "add_chatroom for non-existent user returns error" do
-    #   assert {:error, :user_not_found} = Accounts.add_chatroom("nonexistent", "chat1")
-    # end
+    test "get_blocked_contacts does not include unblocked contacts" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.block_contact("alice", "bob")
+      Accounts.block_contact("alice", "charlie")
+      Accounts.unblock_contact("alice", "bob")
+      {:ok, blocked} = Accounts.get_blocked_contacts("alice")
+      assert blocked == ["charlie"]
+    end
 
-    # test "add_chatroom adds a chatroom to user's chatroom list" do
-    #   assert :ok = Accounts.add_chatroom("charlie", "chat1")
-    #   {:ok, chatrooms} = Accounts.get_chatrooms("charlie")
-    #   assert "chat1" in chatrooms
-    # end
+    test "get_blocked_contacts does not include contacts that were never blocked" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.register_user("dave", "pass456")
+      Accounts.block_contact("alice", "charlie")
+      {:ok, blocked} = Accounts.get_blocked_contacts("alice")
+      assert blocked == ["charlie"]
+    end
+  end
 
-    # test "add_chatroom rejects duplicate chatroom" do
-    #   assert :ok = Accounts.add_chatroom("charlie", "chat1")
-    #   assert :ok = Accounts.add_chatroom("charlie", "chat1")
-    #   {:ok, chatrooms} = Accounts.get_chatrooms("charlie")
-    #   assert Enum.count(chatrooms) == 1
-    # end
+  describe "unblock_contact" do
+    setup do
+      # Setup test users
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
+      :ok
+    end
+
+    test "unblock_contact unblocks a previously blocked contact" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.block_contact("alice", "charlie")
+      assert :ok = Accounts.unblock_contact("alice", "charlie")
+      assert not Accounts.interaction_blocked?("alice", "charlie")
+    end
+
+    test "unblock_contact with non-blocked contact returns error" do
+      assert {:error, :contact_not_blocked} = Accounts.unblock_contact("alice", "bob")
+    end
+
+    test "unblock_contact with non-existent user returns error" do
+      assert {:error, :user_not_found} = Accounts.unblock_contact("nonexistent", "bob")
+    end
+
+    test "unblock_contact with non-existent contact returns error" do
+      assert {:error, :user_not_found} = Accounts.unblock_contact("alice", "nonexistent")
+    end
+  end
+
+  describe "delete_contact" do
+    setup do
+      # Setup test users
+      Accounts.register_user("alice", "pass123")
+      Accounts.register_user("bob", "pass234")
+      :ok
+    end
+
+    test "delete_contact removes contact from user's contact list" do
+      Accounts.register_user("charlie", "pass345")
+      Accounts.add_contact("alice", "charlie")
+      assert :ok = Accounts.delete_contact("alice", "charlie")
+      {:ok, contacts} = Accounts.get_contacts("alice")
+      assert not Enum.member?(contacts, "charlie")
+    end
+
+    test "delete_contact with non-existent user returns error" do
+      assert {:error, :user_not_found} = Accounts.delete_contact("nonexistent", "bob")
+    end
+
+    test "delete_contact with non-existent contact returns error" do
+      assert {:error, :user_not_found} = Accounts.delete_contact("alice", "nonexistent")
+    end
+
+    test "delete_contact with non-contact returns error" do
+      Accounts.register_user("charlie", "pass345")
+      assert {:error, :contact_not_found} = Accounts.delete_contact("alice", "charlie")
+    end
   end
 
   describe "get_user" do

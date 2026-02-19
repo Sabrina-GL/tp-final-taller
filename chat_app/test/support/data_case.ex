@@ -11,5 +11,4 @@ defmodule ChatApp.DataCase do
       import Ecto.Query
     end
   end
-
 end

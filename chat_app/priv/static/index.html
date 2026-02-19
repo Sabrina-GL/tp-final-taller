@@ -19,6 +19,7 @@
             <button class="icon-btn" data-target="notifications">🔔</button>
             <button class="icon-btn" data-target="contacts">👥</button>
             <button class="icon-btn" data-target="chatrooms">💬</button>
+            <button class="icon-btn" data-target="blocked-contacts">🚫</button>
             <button class="icon-btn" id="logout-btn">🚪</button>
 
             <div id="user-info">
@@ -58,6 +59,14 @@
 
                 <ul class="data-list" id="chatrooms-list">
                     <!-- Los chats se cargan acá -->
+                </ul>
+            </div>
+
+            <div class="sidebar-section" id="blocked-contacts-section">
+                <h3>Contactos Bloqueados</h3>
+
+                <ul class="data-list" id="blocked-contacts-list">
+                    <!-- Los contactos bloqueados se cargan acá -->
                 </ul>
             </div>
         </aside>
@@ -108,6 +117,7 @@
     <script src="/static/js/contacts.js"></script>
     <script src="/static/js/chatrooms.js"></script>
     <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/blocked_contacts.js"></script>
 
 </body>
 

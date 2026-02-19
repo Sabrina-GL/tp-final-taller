@@ -37,16 +37,16 @@ defmodule ChatWeb.SocketHandler do
         "get_contacts" ->
           case Accounts.get_contacts(state.user) do
             {:ok, contacts} ->
-              contacts_with_status =
-                Enum.map(contacts, fn contact ->
-                  online = ChatApp.ActivityServer.is_online?(contact)
-                  %{username: contact, online: online}
-                end)
-
-              %{contacts: contacts_with_status}
+              %{contacts: format_contacts_with_status(contacts)}
 
             {:error, reason} ->
               %{error: reason}
+          end
+
+        "get_blocked_contacts" ->
+          case Accounts.get_blocked_contacts(state.user) do
+            {:ok, contacts} -> %{blocked_contacts: contacts}
+            {:error, reason} -> %{error: reason}
           end
 
         "get_chatrooms" ->
@@ -79,15 +79,9 @@ defmodule ChatWeb.SocketHandler do
                {:ok, _chat_id} <-
                  ChatManager.create_private_chat(state.user, data["contact"]),
                chatrooms <- ChatManager.get_user_chatrooms(state.user) do
-            contacts_with_status =
-              Enum.map(contacts, fn contact ->
-                online = ChatApp.ActivityServer.is_online?(contact)
-                %{username: contact, online: online}
-              end)
-
             %{
               status: :contact_added,
-              contacts: contacts_with_status,
+              contacts: format_contacts_with_status(contacts),
               chatrooms: chatrooms,
               chat_opened: true,
               chat_id: "#{Enum.sort([state.user, data["contact"]]) |> Enum.join(":")}"
@@ -98,8 +92,59 @@ defmodule ChatWeb.SocketHandler do
 
         "block_contact" ->
           case Accounts.block_contact(state.user, data["contact"]) do
-            :ok -> %{status: :contact_blocked, contact: data["contact"]}
-            {:error, reason} -> %{error: reason}
+            :ok ->
+              case Accounts.get_contacts(state.user) do
+                {:ok, contacts} ->
+                  %{
+                    status: :contact_blocked,
+                    contact: data["contact"],
+                    contacts: format_contacts_with_status(contacts)
+                  }
+
+                {:error, _} ->
+                  %{status: :contact_blocked, contact: data["contact"]}
+              end
+
+            {:error, reason} ->
+              %{error: reason}
+          end
+
+        "unblock_contact" ->
+          case Accounts.unblock_contact(state.user, data["contact"]) do
+            :ok ->
+              case Accounts.get_blocked_contacts(state.user) do
+                {:ok, contacts} ->
+                  %{
+                    status: :contact_unblocked,
+                    contact: data["contact"],
+                    blocked_contacts: contacts
+                  }
+
+                {:error, _} ->
+                  %{status: :contact_unblocked, contact: data["contact"]}
+              end
+
+            {:error, reason} ->
+              %{error: reason}
+          end
+
+        "delete_contact" ->
+          case Accounts.delete_contact(state.user, data["contact"]) do
+            :ok ->
+              case Accounts.get_contacts(state.user) do
+                {:ok, contacts} ->
+                  %{
+                    status: :contact_deleted,
+                    contact: data["contact"],
+                    contacts: format_contacts_with_status(contacts)
+                  }
+
+                {:error, _} ->
+                  %{status: :contact_deleted, contact: data["contact"]}
+              end
+
+            {:error, reason} ->
+              %{error: reason}
           end
 
         "create_group_chat" ->
@@ -225,5 +270,13 @@ defmodule ChatWeb.SocketHandler do
   def terminate(_reason, _request, state) do
     ChatApp.ActivityServer.user_offline(state.user)
     :ok
+  end
+
+  # Función auxiliar para formatear contactos con estado online
+  defp format_contacts_with_status(contacts) do
+    Enum.map(contacts, fn contact ->
+      online = ChatApp.ActivityServer.is_online?(contact)
+      %{username: contact, online: online}
+    end)
   end
 end

@@ -126,6 +126,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
+    position: relative;
+    min-height: 40px;
 }
 
 .contact-info {
@@ -133,6 +135,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    position: relative;
 }
 
 .contact-name {
@@ -156,6 +159,64 @@
 .online-indicator {
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
     transition: color 0.3s ease;
+}
+
+/* Botones de acción en hover */
+.contact-actions {
+    display: none;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    gap: 5px;
+    padding: 0 5px;
+    z-index: 10;
+}
+
+.contact-item:hover .contact-actions {
+    display: flex;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.block-btn {
+    color: #ff6b6b;
+}
+
+.block-btn:hover {
+    background-color: #D5CFF6;
+    color: white;
+}
+
+.delete-btn {
+    color: #dc3545;
+}
+
+.delete-btn:hover {
+    background-color: #D5CFF6;
+    color: white;
+}
+
+.unblock-btn {
+    color: #4CAF50;
+}
+
+.unblock-btn:hover {
+    background-color: #D5CFF6;
+    color: white;
 }
 
 
