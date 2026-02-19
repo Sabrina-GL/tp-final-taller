@@ -16,6 +16,7 @@
                 <h1>Chat App</h1>
             </div>
 
+            <button class="icon-btn" data-target="notifications">🔔</button>
             <button class="icon-btn" data-target="contacts">👥</button>
             <button class="icon-btn" data-target="chatrooms">💬</button>
             <button class="icon-btn" id="logout-btn">🚪</button>
@@ -27,6 +28,14 @@
 
         <aside class="sidebar" id="sidebar">
 
+            <div class="sidebar-section" id="notifications-section">
+                <h3>Notificaciones</h3>
+
+                <ul class="data-list" id="notifications-list">
+                    <!-- Las notificaciones se cargan acá -->
+                </ul>
+            </div>
+
             <div class="sidebar-section" id="contacts-section">
                 <h3>Mis Contactos</h3>
 
@@ -35,7 +44,9 @@
                     <button id="add-contact-btn">➕</button>
                 </div>
 
-                <ul class="data-list" id="contacts-list"></ul>
+                <ul class="data-list" id="contacts-list">
+                    <!-- Los contactos se cargan acá -->
+                </ul>
             </div>
 
             <div class="sidebar-section" id="chatrooms-section">
@@ -45,7 +56,9 @@
                     <button id="new-group-chat-btn">Nuevo Grupo</button>
                 </div>
 
-                <ul class="data-list" id="chatrooms-list"></ul>
+                <ul class="data-list" id="chatrooms-list">
+                    <!-- Los chats se cargan acá -->
+                </ul>
             </div>
         </aside>
 
@@ -94,6 +107,7 @@
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/contacts.js"></script>
     <script src="/static/js/chatrooms.js"></script>
+    <script src="/static/js/notifications.js"></script>
 
 </body>
 

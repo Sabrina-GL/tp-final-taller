@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Inicializar módulos
     initSidebar();
     initGroupModal();
+    initNotifications();
 
     // Iniciar WebSocket
     connectWebSocket(username);
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('add-contact-btn')?.addEventListener('click', addContact);
     document.getElementById('send-message-btn')?.addEventListener('click', sendMessage);
     document.getElementById('new-group-chat-btn')?.addEventListener('click', showCreateGroupModal);
+    document.getElementById('logout-btn')?.addEventListener('click', logout);
 });
 
 // =========== WebSocket ===========
@@ -57,9 +59,11 @@ function connectWebSocket(username) {
         console.log("Recibido:", e.data);
         const msg = JSON.parse(e.data);
 
+        if (msg.type === "initial_notifications" && msg.notifications) window.renderNotifications(msg.notifications);
         if (msg.contacts) renderContacts(msg.contacts);
         if (msg.chatrooms) renderChatRooms(msg.chatrooms);
         if (msg.messages) renderChatRoomMessages(msg.messages);
+        // if (msg.notifications) renderNotifications(msg.notifications);
         if (msg.status == "chat_opened") openChatRoom(msg.chat_id);
         if (msg.status == "new_message" && window.currentChatRoom === msg.chat_id) {
             renderMessage(msg.message);
@@ -86,6 +90,8 @@ function connectWebSocket(username) {
         }, 1000);
     };
 }
+
+
 
 // Hacer función disponible globalmente
 window.connectWebSocket = connectWebSocket;

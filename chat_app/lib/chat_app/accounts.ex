@@ -1,7 +1,7 @@
 defmodule ChatApp.Accounts do
   # use GenServer
   import Ecto.Query
-  alias ChatApp.{Repo, ChatManager}
+  alias ChatApp.{Repo, ChatManager, Notifications}
   alias ChatApp.Schemas.{User, Contact}
 
   def register_user(username, password) do
@@ -145,6 +145,8 @@ defmodule ChatApp.Accounts do
         contact_id: contact_id
       })
       |> Repo.insert()
+
+      Notifications.notify_new_contact(contact, username)
 
       :ok
     else

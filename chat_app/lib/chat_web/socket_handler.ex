@@ -1,6 +1,13 @@
 defmodule ChatWeb.SocketHandler do
   @behaviour :cowboy_websocket
-  alias ChatApp.{ActivitySupervisor, ActivityServer, Accounts, ChatManager, ChatRoomServer}
+  alias ChatApp.{
+    ActivitySupervisor,
+    ActivityServer,
+    Accounts,
+    ChatManager,
+    ChatRoomServer,
+    Notifications
+  }
 
   # Callback requerido por cowboy_websocket
   def init(request, state) do
@@ -13,11 +20,11 @@ defmodule ChatWeb.SocketHandler do
     ActivitySupervisor.start_activity_server(state.user)
     ActivityServer.user_online(state.user)
 
-    pending = ActivityServer.consume_pending(state.user)
+    notifications = Notifications.get_pending_notifications(state.user)
 
-    Enum.each(pending, fn notification ->
-      send(self(), notification)
-    end)
+    if notifications != [] do
+      send(self(), {:initial_notifications, notifications})
+    end
 
     {:ok, state}
   end
@@ -185,6 +192,17 @@ defmodule ChatWeb.SocketHandler do
   def websocket_info({:new_message, chat_id, message}, state) do
     reply = Jason.encode!(%{status: :new_message, chat_id: chat_id, message: message})
     {:reply, {:text, reply}, state}
+  end
+
+  def websocket_info({:added_as_contact, contact}, state) do
+    reply = Jason.encode!(%{status: :added_as_contact, contact: contact})
+    {:reply, {:text, reply}, state}
+  end
+
+  def websocket_info({:initial_notifications, notifications}, state) do
+    {:reply,
+     {:text, Jason.encode!(%{type: "initial_notifications", notifications: notifications})},
+     state}
   end
 
   def websocket_info({:websocket_message, message}, state) do

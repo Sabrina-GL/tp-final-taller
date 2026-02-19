@@ -172,7 +172,7 @@ function createGroup() {
     const participants = [window.currentUser, ...Array.from(selectedParticipants)];
 
     window.ws.send(JSON.stringify({
-        action: "create_group",
+        action: "create_group_chat",
         group_name: groupName,
         participants: participants
     }));

@@ -19,15 +19,19 @@ function initSidebar() {
 
 function openSection(section) {
     const sidebar = document.getElementById("sidebar");
+    const notificationsSection = document.getElementById("notifications-section");
     const contactsSection = document.getElementById("contacts-section");
     const chatRoomsSection = document.getElementById("chatrooms-section");
 
     sidebar.classList.add("open");
 
+    notificationsSection.classList.add("hidden");
     contactsSection.classList.add("hidden");
     chatRoomsSection.classList.add("hidden");
 
-    if (section === "contacts") {
+    if (section === "notifications") {
+        notificationsSection.classList.remove("hidden");
+    } else if (section === "contacts") {
         contactsSection.classList.remove("hidden");
     } else if (section === "chatrooms") {
         chatRoomsSection.classList.remove("hidden");
@@ -55,6 +59,15 @@ function clearActiveSection() {
     });
 }
 
+function logout() {
+    console.log("Cerrando sesión...");
+    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+        window.ws.close();
+    }
+    window.location = "/login";
+}
+
 // Hacer funciones disponibles globalmente
 window.openSection = openSection;
 window.closeSidebar = closeSidebar;
+window.logout = logout;

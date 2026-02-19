@@ -163,7 +163,9 @@ defmodule ChatApp.ChatRoomTest do
 
     test "delete_message falla si requester no es participante", %{chat_id: chat_id} do
       msg = ChatRoomServer.add_message(chat_id, "alice", "Mensaje")
-      assert {:error, :not_participant} = ChatRoomServer.delete_message(chat_id, "charlie", msg.id)
+
+      assert {:error, :not_participant} =
+               ChatRoomServer.delete_message(chat_id, "charlie", msg.id)
     end
 
     test "delete_message falla si mensaje no existe", %{chat_id: chat_id} do
@@ -177,7 +179,9 @@ defmodule ChatApp.ChatRoomTest do
 
     test "delete_messages falla si requester no es participante", %{chat_id: chat_id} do
       msg = ChatRoomServer.add_message(chat_id, "alice", "Mensaje")
-      assert {:error, :not_participant} = ChatRoomServer.delete_messages(chat_id, "charlie", [msg.id])
+
+      assert {:error, :not_participant} =
+               ChatRoomServer.delete_messages(chat_id, "charlie", [msg.id])
     end
   end
 end

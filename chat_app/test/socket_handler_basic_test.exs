@@ -30,10 +30,12 @@ defmodule ChatWeb.SocketHandlerBasicTest do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
     end
+
     case ChatApp.ActivityServer.start_link("bob") do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
     end
+
     case ChatApp.ActivityServer.start_link("carol") do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
@@ -297,7 +299,11 @@ defmodule ChatWeb.SocketHandlerBasicTest do
 
     assert {:ok, %{user: "alice"}} = SocketHandler.websocket_init(%{user: "alice"})
     assert Registry.lookup(ChatApp.UsersRegistry, "alice") != []
-    assert_receive {:new_chatroom, "room1"}
+    assert_receive {:initial_notifications, notifications}
+    assert length(notifications) == 1
+    [notif] = notifications
+    assert notif.type == "new_chatroom"
+    assert notif.chat_id == "room1"
   end
 
   test "websocket_handle ignores non-text frames" do
