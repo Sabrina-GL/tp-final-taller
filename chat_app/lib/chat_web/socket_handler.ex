@@ -256,6 +256,17 @@ defmodule ChatWeb.SocketHandler do
      state}
   end
 
+  def websocket_info({:message_deleted, chat_id, message_id}, state) do
+    reply =
+      Jason.encode!(%{
+        status: "message_deleted",
+        chat_id: chat_id,
+        message_id: message_id
+      })
+
+    {:reply, {:text, reply}, state}
+  end
+
   def websocket_info({:websocket_message, message}, state) do
     {:reply, {:text, message}, state}
   end

@@ -202,6 +202,17 @@ defmodule ChatApp.ChatRoomServer do
       Repo.delete(message)
 
       new_messages = Enum.reject(state.messages, fn msg -> msg.id == message_id end)
+
+      for participant <- state.participants, participant != requester do
+        case Registry.lookup(ChatApp.UsersRegistry, participant) do
+          [{pid, _}] ->
+            send(pid, {:message_deleted, state.chat_id, message_id})
+
+          [] ->
+            :ok
+        end
+      end
+
       {:reply, :ok, %{state | messages: new_messages}}
     else
       false -> {:reply, {:error, :not_participant}, state}

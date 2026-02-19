@@ -363,11 +363,12 @@
     padding: 12px 16px;
     border-radius: 10px;
     color: #5A595D;
-    min-width: 100px;
+    min-width: 120px;
     max-width: 20%;
     margin-bottom: 10px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    position: relative;
 }
 
 .chat-message-sent {
@@ -397,9 +398,42 @@
 }
 
 .message-timestamp {
+    display: inline-block;
     font-size: 10px;
     color: #7f8c8d;
     margin-top: 5px;
+}
+
+.delete-message-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 8px;
+    cursor: pointer;
+    padding: 2px 5px;
+    margin-left: 8px;
+    border-radius: 4px;
+    opacity: 0.7;
+    vertical-align: middle;
+}
+
+.delete-message-btn:hover {
+    opacity: 1;
+    background-color: #D5CFF6;
+    color: white;
+}
+
+.chat-message-sent .message-bubble:hover .delete-message-btn {
+    display: inline-block;
+}
+
+.message-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 10px;
 }
 
 /* Input */

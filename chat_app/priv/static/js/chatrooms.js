@@ -53,20 +53,38 @@ function renderMessage(message) {
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("chat-message");
     msgDiv.setAttribute("data-message-id", message.id);
-
     if (message.from === window.currentUser) {
         msgDiv.classList.add("chat-message-sent");
     } else {
         msgDiv.classList.add("chat-message-received");
     }
+    const deleteBtn = message.from === window.currentUser ?
+        '<button class="delete-message-btn" title="Eliminar mensaje">🗑️</button>' : '';
 
     msgDiv.innerHTML = `
         <div class="message-bubble">
             <div class="message-author">${message.from}</div>
             <div class="message-content">${message.msg_content}</div>
-            <div class="message-timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+            <div class="message-footer">
+                ${deleteBtn}
+                <div class="message-timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+            </div>
         </div>
     `;
+
+    if (message.from === window.currentUser) {
+        const btn = msgDiv.querySelector('.delete-message-btn');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('¿Eliminar este mensaje?')) {
+                window.ws.send(JSON.stringify({
+                    action: "delete_message",
+                    message_id: message.id,
+                    chat_id: window.currentChatRoom
+                }));
+            }
+        });
+    }
 
     messagesContainer.appendChild(msgDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
