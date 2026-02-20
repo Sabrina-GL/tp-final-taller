@@ -62,3 +62,6 @@ venv/
 /chat_app_dev.db-*
 /chat_app_test.db
 /chat_app_test.db-*
+
+# Uploaded files
+/priv/uploads/
