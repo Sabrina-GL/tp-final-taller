@@ -2,13 +2,6 @@
 
 Sistema de chat cliente-servidor con backend en Elixir/OTP y comunicación en tiempo real por WebSocket (Cowboy).
 
-## Resumen para tribunal
-
-- Requisitos obligatorios de la consigna: ✅ completos.
-- Features opcionales implementadas: ✅ 5/5.
-- Cliente de consola funcional con todas las features: ✅.
-- Arquitectura OTP con supervisores, registries y GenServers: ✅.
-
 ## Documentación
 
 ### Uso y demo
@@ -107,12 +100,6 @@ Notas:
 - Los dumps se guardan en `backups/postgres/` con timestamp.
 - Se conserva automáticamente el histórico de los últimos 7 backups.
 - El restore por defecto apunta a `chat_app_restore` (no pisa `chat_app_dev`).
-
-## Estado del proyecto
-
-- ✅ Requisitos obligatorios de la consigna: completos
-- ✅ Opcionales implementados: frontend web, bloqueo, borrado, envío de archivos y backups
-- ✅ Pendientes críticos: ninguno
 
 ## Documentación del proyecto
 
