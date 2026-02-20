@@ -85,6 +85,9 @@ function connectWebSocket(username) {
         }
         else if (msg.status === "new_message" && window.currentChatRoom === msg.chat_id) {
             renderMessage(msg.message);
+        } else if (msg.status === "group_chat_created") {
+            window.addChatRoomToList(msg.chat_id);
+            openChatRoom(msg.chat_id);
         }
         else if (msg.type === "initial_notifications" && msg.notifications) {
             window.renderNotifications(msg.notifications);
@@ -109,6 +112,8 @@ function connectWebSocket(username) {
         }
         else if (msg.type === "contact_status" && msg.username) {
             window.updateContactStatus?.(msg.username, msg.online);
+        } else if (msg.status === "ok" && msg.type === "file") {
+            renderFileMessage(msg.message);
         }
         else if (msg.error) {
             alert(`Error: ${msg.error}`);

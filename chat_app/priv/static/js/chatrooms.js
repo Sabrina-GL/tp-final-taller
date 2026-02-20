@@ -155,13 +155,6 @@ function sendFile() {
         document.getElementById('message-input').placeholder = 'Escribí un mensaje...';
         document.getElementById('message-input').value = '';
 
-        renderFileMessage({
-            from: window.currentUser,
-            file_name: selectedFile.name,
-            file_type: selectedFile.type,
-            file_size: selectedFile.size,
-            timestamp: new Date().toISOString()
-        });
         selectedFile = null;
     };
     reader.readAsDataURL(selectedFile);
