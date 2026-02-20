@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('send-message-btn')?.addEventListener('click', sendMessage);
     document.getElementById('new-group-chat-btn')?.addEventListener('click', showCreateGroupModal);
     document.getElementById('logout-btn')?.addEventListener('click', logout);
+
 });
 
 // =========== WebSocket ===========
@@ -59,54 +60,6 @@ function connectWebSocket(username) {
         console.log("Recibido:", e.data);
         const msg = JSON.parse(e.data);
 
-        // if (msg.type === "initial_notifications" && msg.notifications) window.renderNotifications(msg.notifications);
-        // if (msg.contacts) renderContacts(msg.contacts);
-        // if (msg.chatrooms) renderChatRooms(msg.chatrooms);
-        // if (msg.messages) renderChatRoomMessages(msg.messages);
-        // if (msg.search_results) {
-        //     if (typeof window.renderSearchResults === 'function') {
-        //         window.renderSearchResults(msg.search_results);
-        //     }
-        // }
-        // if (msg.blocked_contacts) renderBlockedContacts(msg.blocked_contacts);
-        // if (msg.status == "chat_opened") openChatRoom(msg.chat_id);
-        // if (msg.status == "new_message" && window.currentChatRoom === msg.chat_id) {
-        //     renderMessage(msg.message);
-        // }
-        // if (msg.type == "new_chatroom") addChatRoomToList(msg.chat_id);
-        // if (msg.type === "contact_status" && msg.username) {
-        //     if (typeof window.updateContactStatus === 'function') {
-        //         window.updateContactStatus(msg.username, msg.online);
-        //     }
-        // }
-        // if (msg.status === "contact_blocked") {
-        //     if (msg.contacts) {
-        //         console.log("Cantidad de contactos:", msg.contacts.length);
-        //         renderContacts(msg.contacts);
-        //     } else {
-        //         console.log("No se recibieron contactos, llamando a getContacts()");
-        //         getContacts();
-        //     }
-        // }
-        // if (msg.status === "contact_unblocked") {
-        //     alert(`Contacto ${msg.contact} desbloqueado`);
-        //     if (msg.blocked_contacts) {
-        //         window.renderBlockedContacts(msg.blocked_contacts);
-        //     }
-        //     getContacts();
-        // }
-
-        // if (msg.status === "contact_deleted") {
-        //     alert(`Contacto ${msg.contact} eliminado`);
-        //     if (msg.contacts) renderContacts(msg.contacts);
-        // }
-        // if (msg.status === "message_deleted") {
-        //     if (window.currentChatRoom) {
-        //         getChatRoomMessages(window.currentChatRoom);
-        //     }
-        // }
-        // if (msg.error) alert(`Error: ${msg.error}`);
-        // Primero manejar acciones específicas que podrían tener campos compartidos
         if (msg.status === "message_deleted" && window.currentChatRoom) {
             getChatRoomMessages(window.currentChatRoom);
         }
@@ -133,7 +86,6 @@ function connectWebSocket(username) {
         else if (msg.status === "new_message" && window.currentChatRoom === msg.chat_id) {
             renderMessage(msg.message);
         }
-        // Luego manejar datos
         else if (msg.type === "initial_notifications" && msg.notifications) {
             window.renderNotifications(msg.notifications);
         }

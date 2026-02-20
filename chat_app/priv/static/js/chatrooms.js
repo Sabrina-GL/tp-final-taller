@@ -1,10 +1,46 @@
 // chatrooms.js
 let searchResults = [];
 let currentSearchIndex = -1;
+let selectedFile = null;
 
-function getChatRooms() {
-    window.ws.send(JSON.stringify({ action: "get_chatrooms" }));
+// ========== Initialization ===========
+
+function initFileUpload() {
+    const attachBtn = document.getElementById('attach-file-btn');
+    const fileInput = document.getElementById('file-input');
+
+    attachBtn?.addEventListener('click', () => {
+        fileInput.click();
+    });
+    fileInput?.addEventListener('change', (e) => {
+        selectedFile = e.target.files[0];
+    });
 }
+
+function initSearch() {
+    const searchBtn = document.getElementById('search-btn');
+    const searchInput = document.getElementById('search-input');
+    const prevBtn = document.getElementById('prev-result');
+    const nextBtn = document.getElementById('next-result');
+
+    searchBtn?.addEventListener('click', performSearch);
+    searchInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { performSearch(); }
+    });
+    prevBtn?.addEventListener('click', prevSearchResult);
+    nextBtn?.addEventListener('click', nextSearchResult);
+}
+
+function initGroupModal() {
+    groupModal = document.getElementById('group-modal');
+    document.querySelector('.close-modal')?.addEventListener('click', closeGroupModal);
+    document.getElementById('create-group-btn')?.addEventListener('click', createGroup);
+    window.addEventListener('click', (e) => e.target === groupModal && closeGroupModal());
+}
+
+// ========== Chat Rooms ===========
+
+function getChatRooms() { window.ws.send(JSON.stringify({ action: "get_chatrooms" })); }
 
 function openChatRoom(chat_id) {
     console.log("Abriendo chat room:", chat_id);
@@ -12,7 +48,6 @@ function openChatRoom(chat_id) {
 
     document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
     document.getElementById("chat-messages").innerHTML = "";
-
     closeSidebar();
     getChatRoomMessages(chat_id);
 }
@@ -35,11 +70,10 @@ function addChatRoomToList(chat_id) {
     }
 }
 
+// ========== Messages ===========
+
 function getChatRoomMessages(chat_id) {
-    window.ws.send(JSON.stringify({
-        action: "get_messages",
-        chat_id: chat_id
-    }));
+    window.ws.send(JSON.stringify({ action: "get_messages", chat_id }));
 }
 
 function renderChatRoomMessages(messages) {
@@ -49,15 +83,13 @@ function renderChatRoomMessages(messages) {
 }
 
 function renderMessage(message) {
+    if (message.file_name) return renderFileMessage(message);
+
     const messagesContainer = document.getElementById("chat-messages");
     const msgDiv = document.createElement("div");
-    msgDiv.classList.add("chat-message");
+    msgDiv.classList.add("chat-message", message.from === window.currentUser ? "chat-message-sent" : "chat-message-received");
     msgDiv.setAttribute("data-message-id", message.id);
-    if (message.from === window.currentUser) {
-        msgDiv.classList.add("chat-message-sent");
-    } else {
-        msgDiv.classList.add("chat-message-received");
-    }
+
     const deleteBtn = message.from === window.currentUser ?
         '<button class="delete-message-btn" title="Eliminar mensaje">🗑️</button>' : '';
 
@@ -93,21 +125,99 @@ function renderMessage(message) {
 function sendMessage() {
     const input = document.getElementById("message-input");
     const message = input.value.trim();
+
+    if (selectedFile) return sendFile();
     if (!message || !window.currentChatRoom) return;
 
-    window.ws.send(JSON.stringify({
-        action: "send_message",
-        chat_id: window.currentChatRoom,
-        msg_content: message
-    }));
-
-    renderMessage({
-        from: window.currentUser,
-        msg_content: message,
-        timestamp: Date.now()
-    });
-
+    window.ws.send(JSON.stringify({ action: "send_message", chat_id: window.currentChatRoom, msg_content: message }));
+    renderMessage({ from: window.currentUser, msg_content: message, timestamp: Date.now() });
     input.value = "";
+}
+
+// ========== File Upload ===========
+
+function sendFile() {
+    if (!selectedFile || !window.currentChatRoom) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const base64Content = e.target.result.split(',')[1];
+
+        window.ws.send(JSON.stringify({
+            action: "send_file",
+            chat_id: window.currentChatRoom,
+            file_name: selectedFile.name,
+            file_type: selectedFile.type,
+            file_content: base64Content
+        }));
+
+        document.getElementById('file-input').value = '';
+        document.getElementById('message-input').placeholder = 'Escribí un mensaje...';
+        document.getElementById('message-input').value = '';
+
+        renderFileMessage({
+            from: window.currentUser,
+            file_name: selectedFile.name,
+            file_type: selectedFile.type,
+            file_size: selectedFile.size,
+            timestamp: new Date().toISOString()
+        });
+        selectedFile = null;
+    };
+    reader.readAsDataURL(selectedFile);
+}
+
+function renderFileMessage(fileData) {
+    const messagesContainer = document.getElementById("chat-messages");
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add("chat-message", fileData.from === window.currentUser ? "chat-message-sent" : "chat-message-received");
+    msgDiv.setAttribute("data-message-id", fileData.id || Date.now());
+
+    const fileSize = fileData.file_size ? formatFileSize(fileData.file_size) : '';
+
+    const deleteBtn = fileData.from === window.currentUser ?
+        '<button class="delete-message-btn" title="Eliminar mensaje">🗑️</button>' : '';
+
+    msgDiv.innerHTML = `
+        <div class="message-bubble">
+            <div class="message-author">${fileData.from}</div>
+            <div class="file-attachment">
+                <span class="file-icon">📄</span>
+                <div class="file-info">
+                    <div class="file-name">${fileData.file_name}</div>
+                    ${fileSize ? `<div class="file-size">${fileSize}</div>` : ''}
+                </div>
+                ${fileData.file_path ?
+            `<a href="/${fileData.file_path}" class="download-link" download="${fileData.file_name}">📥</a>` :
+            ''}
+            </div>
+            <div class="message-timestamp">${new Date(fileData.timestamp).toLocaleTimeString()}</div>
+            ${deleteBtn}
+        </div>
+    `;
+
+    if (fileData.from === window.currentUser) {
+        const btn = msgDiv.querySelector('.delete-message-btn');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('¿Eliminar este mensaje?')) {
+                window.ws.send(JSON.stringify({
+                    action: "delete_message",
+                    message_id: fileData.id,
+                    chat_id: window.currentChatRoom
+                }));
+            }
+        });
+    }
+
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
 // ========== Group Chat Modal ===========
@@ -115,16 +225,6 @@ function sendMessage() {
 let groupModal = null;
 let selectedParticipants = new Set();
 
-function initGroupModal() {
-    groupModal = document.getElementById('group-modal');
-
-    document.querySelector('.close-modal')?.addEventListener('click', closeGroupModal);
-    document.getElementById('create-group-btn')?.addEventListener('click', createGroup);
-
-    window.addEventListener('click', (e) => {
-        if (e.target === groupModal) closeGroupModal();
-    });
-}
 
 function showCreateGroupModal() {
     loadContactsForModal();
@@ -133,24 +233,14 @@ function showCreateGroupModal() {
     document.getElementById('group-name').value = '';
 }
 
-function closeGroupModal() {
-    groupModal.classList.remove('show');
-}
-
-function loadContactsForModal() {
-    window.ws.send(JSON.stringify({ action: "get_contacts" }));
-}
+function closeGroupModal() { groupModal.classList.remove('show'); }
+function loadContactsForModal() { window.ws.send(JSON.stringify({ action: "get_contacts" })); }
 
 function updateContactsModal(contacts) {
     const contactsList = document.getElementById('contacts-list-modal');
     if (!contactsList) return;
 
     contactsList.innerHTML = '';
-
-    if (!contacts || contacts.length === 0) {
-        contactsList.innerHTML = '<p style="color: #666;">No tienes contactos aún</p>';
-        return;
-    }
 
     contacts.forEach(contact => {
         const div = document.createElement('div');
@@ -160,13 +250,7 @@ function updateContactsModal(contacts) {
         checkbox.type = 'checkbox';
         checkbox.id = `contact-${contact}`;
         checkbox.value = contact;
-        checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                selectedParticipants.add(contact);
-            } else {
-                selectedParticipants.delete(contact);
-            }
-        });
+        checkbox.addEventListener('change', (e) => e.target.checked ? selectedParticipants.add(contact) : selectedParticipants.delete(contact));
 
         const label = document.createElement('label');
         label.htmlFor = `contact-${contact}`;
@@ -180,23 +264,13 @@ function updateContactsModal(contacts) {
 
 function createGroup() {
     const groupName = document.getElementById('group-name').value.trim();
-
-    if (!groupName) {
-        alert('Por favor ingresa un nombre para el grupo');
-        return;
-    }
-
-    if (selectedParticipants.size === 0) {
-        alert('Por favor selecciona al menos un participante');
-        return;
-    }
-
-    const participants = [window.currentUser, ...Array.from(selectedParticipants)];
+    if (!groupName) return alert('Por favor ingresa un nombre para el grupo');
+    if (selectedParticipants.size === 0) return alert('Por favor selecciona al menos un participante');
 
     window.ws.send(JSON.stringify({
         action: "create_group_chat",
         group_name: groupName,
-        participants: participants
+        participants: [window.currentUser, ...Array.from(selectedParticipants)]
     }));
 
     closeGroupModal();
@@ -205,33 +279,17 @@ function createGroup() {
 /* ========== Search in Chat =========== */
 
 function performSearch() {
-    const searchInput = document.getElementById('search-input');
-    const query = searchInput.value.trim();
+    const query = document.getElementById('search-input').value.trim();
+    if (!query || !window.currentChatRoom) return alert('Ingresá un término para buscar');
 
-    if (!query || !window.currentChatRoom) {
-        alert('Ingresá un término para buscar');
-        return;
-    }
-
-    // Limpiar highlights anteriores
     clearHighlights();
-
-    window.ws.send(JSON.stringify({
-        action: "search_messages",
-        chat_id: window.currentChatRoom,
-        query: query
-    }));
+    window.ws.send(JSON.stringify({ action: "search_messages", chat_id: window.currentChatRoom, query: query }));
 }
 
 function renderSearchResults(messages) {
-    console.log("Resultados de búsqueda:", messages);
+    if (!messages || messages.length === 0) return alert('No se encontraron mensajes');
 
-    if (!messages || messages.length === 0) {
-        alert('No se encontraron mensajes');
-        return;
-    }
-
-    searchResults = messages;
+    searchResults = messages.slice().reverse();
     currentSearchIndex = searchResults.length - 1; // Empezar por el último
 
     clearHighlights();
@@ -243,25 +301,17 @@ function highlightCurrentMessage() {
     if (searchResults.length === 0 || currentSearchIndex < 0) return;
 
     const messageId = searchResults[currentSearchIndex].id;
-    const messageElement = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
-
-    if (messageElement) {
-        messageElement.classList.add('highlight');
-    }
+    document.querySelector(`.chat-message[data-message-id="${messageId}"]`)?.classList.add('highlight');
 }
 
 function clearHighlights() {
-    document.querySelectorAll('.chat-message').forEach(el => {
-        el.classList.remove('highlight');
-    });
+    document.querySelectorAll('.chat-message').forEach(el => { el.classList.remove('highlight'); });
 }
 
 function goToSearchResult(index) {
     if (searchResults.length === 0) return;
-
     // Asegurar índice válido
-    if (index < 0) index = searchResults.length - 1;
-    if (index >= searchResults.length) index = 0;
+    index = index < 0 ? searchResults.length - 1 : (index >= searchResults.length ? 0 : index);
 
     clearHighlights();
     currentSearchIndex = index;
@@ -270,58 +320,24 @@ function goToSearchResult(index) {
     const messageId = searchResults[currentSearchIndex].id;
     const messageElement = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
 
-    if (messageElement) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (messageElement) { messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
     updateSearchCounter();
 }
 
-function nextSearchResult() {
-    goToSearchResult(currentSearchIndex + 1);
-}
-
-function prevSearchResult() {
-    goToSearchResult(currentSearchIndex - 1);
-}
-
 function updateSearchCounter() {
     const counter = document.getElementById('search-counter');
-    if (counter) {
-        counter.textContent = `${currentSearchIndex + 1}/${searchResults.length}`;
-    }
+    if (counter) { counter.textContent = `${currentSearchIndex + 1}/${searchResults.length}`; }
 }
 
-function initSearch() {
-    const searchBtn = document.getElementById('search-btn');
-    const searchInput = document.getElementById('search-input');
-    const prevBtn = document.getElementById('prev-result');
-    const nextBtn = document.getElementById('next-result');
+function nextSearchResult() { goToSearchResult(currentSearchIndex + 1); }
 
-    if (searchBtn) {
-        searchBtn.addEventListener('click', performSearch);
-    }
+function prevSearchResult() { goToSearchResult(currentSearchIndex - 1); }
 
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
-    }
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', prevSearchResult);
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', nextSearchResult);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initSearch);
-document.getElementById('prev-result')?.addEventListener('click', prevSearchResult);
-document.getElementById('next-result')?.addEventListener('click', nextSearchResult);
+document.addEventListener('DOMContentLoaded', () => {
+    initSearch();
+    initFileUpload();
+});
 
 // Hacer funciones disponibles globalmente
 window.getChatRooms = getChatRooms;
