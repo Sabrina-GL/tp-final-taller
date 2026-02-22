@@ -1,27 +1,35 @@
 defmodule ChatApp.Accounts do
-  # use GenServer
+  @moduledoc """
+  Gestiona cuentas de usuario, autenticación, contactos y bloqueos.
+
+  Este módulo se encarga de:
+  - Registro y autenticación de usuarios
+  - Consulta de datos de usuario (última conexión, contactos)
+  - Gestión de contactos (agregar, bloquear, desbloquear, eliminar)
+
+  Utiliza Ecto para interactuar con la base de datos y Bcrypt para el hashing de contraseñas.
+  """
   import Ecto.Query
   alias ChatApp.{Repo, ChatManager, Notifications}
   alias ChatApp.Schemas.{User, Contact}
 
+  # ========== Registro y Autenticación ==========
   def register_user(username, password) do
     with :ok <- validate_registration(username, password),
          false <- account_exists?(username) do
       hashed = Bcrypt.hash_pwd_salt(password)
       now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-      changeset =
-        User.changeset(%User{}, %{
-          username: username,
-          password_hash: hashed,
-          last_seen: now
-        })
-
-      with {:ok, _user} <- Repo.insert(changeset) do
-        :ok
-      else
-        {:error, _changeset} ->
-          {:error, :registration_failed}
+      %User{}
+      |> User.changeset(%{
+        username: username,
+        password_hash: hashed,
+        last_seen: now
+      })
+      |> Repo.insert()
+      |> case do
+        {:ok, _user} -> :ok
+        {:error, _changeset} -> {:error, :registration_failed}
       end
     else
       {:error, reason} ->
@@ -29,6 +37,16 @@ defmodule ChatApp.Accounts do
 
       true ->
         {:error, :user_exists}
+    end
+  end
+
+  def authenticate_user(username, password) do
+    with {:ok, user} <- get_user(username),
+         true <- Bcrypt.verify_pass(password, user.password_hash) do
+      update_last_seen(username)
+    else
+      {:error, _} -> {:error, :invalid_credentials}
+      false -> {:error, :invalid_credentials}
     end
   end
 
@@ -52,16 +70,7 @@ defmodule ChatApp.Accounts do
     Repo.get_by(User, username: username) != nil
   end
 
-  def authenticate_user(username, password) do
-    with {:ok, user} <- get_user(username),
-         true <- Bcrypt.verify_pass(password, user.password_hash) do
-      update_last_seen(username)
-    else
-      {:error, _} -> {:error, :invalid_credentials}
-      false -> {:error, :invalid_credentials}
-    end
-  end
-
+  # ========== User Data ==========
   def get_user(username) do
     case Repo.get_by(User, username: username) do
       nil ->
@@ -83,11 +92,46 @@ defmodule ChatApp.Accounts do
     end
   end
 
+  def update_last_seen(username) do
+    case Repo.get_by(User, username: username) do
+      nil ->
+        {:error, :user_not_found}
+
+      user ->
+        # Update last_seen timestamp (truncate microseconds)
+        now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+        User.update_last_seen(user, now)
+        |> Repo.update()
+
+        :ok
+    end
+  end
+
+  def last_seen(username) do
+    case Repo.get_by(User, username: username) do
+      nil ->
+        {:error, :user_not_found}
+
+      user ->
+        {:ok, user.last_seen}
+    end
+  end
+
+  # ========== Contact Queries ==========
   def get_contacts(username) do
+    get_contacts_by_status(username, "active")
+  end
+
+  def get_blocked_contacts(username) do
+    get_contacts_by_status(username, "blocked")
+  end
+
+  defp get_contacts_by_status(username, status) do
     with %User{id: user_id} <- Repo.get_by(User, username: username) do
       contacts =
         Contact
-        |> where([c], c.user_id == ^user_id and c.status == "active")
+        |> where([c], c.user_id == ^user_id and c.status == ^status)
         |> join(:inner, [c], u in User, on: c.contact_id == u.id)
         |> order_by([_c, u], asc: u.username)
         |> select([_c, u], u.username)
@@ -115,31 +159,17 @@ defmodule ChatApp.Accounts do
     end
   end
 
-  def get_blocked_contacts(username) do
-    with %User{id: user_id} <- Repo.get_by(User, username: username) do
-      blocked_contacts =
-        Contact
-        |> where([c], c.user_id == ^user_id and c.status == "blocked")
-        |> join(:inner, [c], u in User, on: c.contact_id == u.id)
-        |> order_by([_c, u], asc: u.username)
-        |> select([_c, u], u.username)
-        |> Repo.all()
-
-      {:ok, blocked_contacts}
-    else
-      nil -> {:error, :user_not_found}
-    end
-  end
-
+  # ========== Contact Management ==========
   def add_contact(username, contact) do
-    if username == contact do
-      {:error, :cannot_add_self}
-    else
-      with false <- interaction_blocked?(username, contact) do
+    cond do
+      username == contact ->
+        {:error, :cannot_add_self}
+
+      interaction_blocked?(username, contact) ->
+        {:error, :contact_blocked}
+
+      true ->
         add_contact_to_db(username, contact)
-      else
-        true -> {:error, :contact_blocked}
-      end
     end
   end
 
@@ -151,6 +181,75 @@ defmodule ChatApp.Accounts do
     end
   end
 
+  def unblock_contact(username, contact) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username),
+         %User{id: contact_id} <- Repo.get_by(User, username: contact),
+         true <- interaction_blocked?(username, contact) do
+      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
+        nil ->
+          {:error, :contact_not_blocked}
+
+        relation ->
+          relation
+          |> Contact.changeset(%{status: "active"})
+          |> Repo.update()
+
+          :ok
+      end
+    else
+      nil -> {:error, :user_not_found}
+      false -> {:error, :contact_not_blocked}
+    end
+  end
+
+  def delete_contact(username, contact) do
+    with %User{id: user_id} <- Repo.get_by(User, username: username),
+         %User{id: contact_id} <- Repo.get_by(User, username: contact) do
+      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
+        nil ->
+          {:error, :contact_not_found}
+
+        relation ->
+          Repo.delete(relation)
+          :ok
+      end
+    else
+      nil -> {:error, :user_not_found}
+    end
+  end
+
+  def interaction_blocked?(username1, username2) do
+    with %User{id: user1_id} <- Repo.get_by(User, username: username1),
+         %User{id: user2_id} <- Repo.get_by(User, username: username2) do
+      Contact
+      |> where(
+        [c],
+        (c.user_id == ^user1_id and c.contact_id == ^user2_id and c.status == "blocked") or
+          (c.user_id == ^user2_id and c.contact_id == ^user1_id and c.status == "blocked")
+      )
+      |> Repo.exists?()
+    else
+      _ -> false
+    end
+  end
+
+  def blocked_with_any?(username, participants) when is_list(participants) do
+    participants
+    |> Enum.reject(&(&1 == username))
+    |> Enum.any?(fn participant -> interaction_blocked?(username, participant) end)
+  end
+
+  def has_blocked_pair?(participants) when is_list(participants) do
+    pairs =
+      for a <- participants,
+          b <- participants,
+          a < b,
+          do: {a, b}
+
+    Enum.any?(pairs, fn {a, b} -> interaction_blocked?(a, b) end)
+  end
+
+  # ========== Contact Management Helpers ==========
   defp add_contact_to_db(username, contact) do
     with %User{id: user_id} <- Repo.get_by(User, username: username),
          %User{id: contact_id} <- Repo.get_by(User, username: contact),
@@ -192,103 +291,9 @@ defmodule ChatApp.Accounts do
     end
   end
 
-  def unblock_contact(username, contact) do
-    with %User{id: user_id} <- Repo.get_by(User, username: username),
-         %User{id: contact_id} <- Repo.get_by(User, username: contact),
-         true <- interaction_blocked?(username, contact) do
-      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
-        nil ->
-          {:error, :contact_not_blocked}
-
-        relation ->
-          relation
-          |> Contact.changeset(%{status: "active"})
-          |> Repo.update()
-
-          :ok
-      end
-    else
-      nil -> {:error, :user_not_found}
-      false -> {:error, :contact_not_blocked}
-    end
-  end
-
-  def delete_contact(username, contact) do
-    with %User{id: user_id} <- Repo.get_by(User, username: username),
-         %User{id: contact_id} <- Repo.get_by(User, username: contact) do
-      case Repo.get_by(Contact, user_id: user_id, contact_id: contact_id) do
-        nil ->
-          {:error, :contact_not_found}
-
-        relation ->
-          Repo.delete(relation)
-          :ok
-      end
-    else
-      nil -> {:error, :user_not_found}
-    end
-  end
-
   defp contact_already_added?(user_id, contact_id) do
     Contact
     |> where([c], c.user_id == ^user_id and c.contact_id == ^contact_id)
     |> Repo.exists?()
-  end
-
-  def interaction_blocked?(username1, username2) do
-    with %User{id: user1_id} <- Repo.get_by(User, username: username1),
-         %User{id: user2_id} <- Repo.get_by(User, username: username2) do
-      Contact
-      |> where(
-        [c],
-        (c.user_id == ^user1_id and c.contact_id == ^user2_id and c.status == "blocked") or
-          (c.user_id == ^user2_id and c.contact_id == ^user1_id and c.status == "blocked")
-      )
-      |> Repo.exists?()
-    else
-      _ -> false
-    end
-  end
-
-  def blocked_with_any?(username, participants) when is_list(participants) do
-    participants
-    |> Enum.reject(&(&1 == username))
-    |> Enum.any?(fn participant -> interaction_blocked?(username, participant) end)
-  end
-
-  def has_blocked_pair?(participants) when is_list(participants) do
-    pairs =
-      for a <- participants,
-          b <- participants,
-          a < b,
-          do: {a, b}
-
-    Enum.any?(pairs, fn {a, b} -> interaction_blocked?(a, b) end)
-  end
-
-  def update_last_seen(username) do
-    case Repo.get_by(User, username: username) do
-      nil ->
-        {:error, :user_not_found}
-
-      user ->
-        # Update last_seen timestamp (truncate microseconds)
-        now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-        User.update_last_seen(user, now)
-        |> Repo.update()
-
-        :ok
-    end
-  end
-
-  def last_seen(username) do
-    case Repo.get_by(User, username: username) do
-      nil ->
-        {:error, :user_not_found}
-
-      user ->
-        {:ok, user.last_seen}
-    end
   end
 end

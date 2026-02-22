@@ -1,44 +1,12 @@
 defmodule ChatApp.ChatRoomTest do
-  use ChatApp.DataCase
-  alias ChatApp.{ChatRoomServer, Accounts, Repo}
+  use ChatApp.DataCase, async: false
+  alias ChatApp.{ChatRoomServer, Accounts}
 
   setup do
-    # Clear database before each test
-    Repo.delete_all(ChatApp.Schemas.User)
-    Repo.delete_all(ChatApp.Schemas.Message)
-    Repo.delete_all(ChatApp.Schemas.Chatroom)
+    create_test_users(["alice", "bob", "charlie"])
+    start_activity_servers(["alice", "bob", "charlie"])
 
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
-    Accounts.register_user("alice", "password")
-    Accounts.register_user("bob", "password")
-
-    # Limpiar el registro de chat rooms antes de cada prueba
-    Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
-    |> Enum.each(&Process.exit(&1, :kill))
-
-    # Arrancar ActivityServer para cada usuario
-    for user <- ["alice", "bob"] do
-      case ChatApp.ActivitySupervisor.start_activity_server(user) do
-        {:ok, _pid} -> :ok
-        {:error, {:already_started, _pid}} -> :ok
-      end
-    end
-
-    chat_id = "alice:bob:#{System.unique_integer([:positive])}"
-
-    {:ok, _pid} =
-      ChatApp.ChatRoomServer.start_link(%{
-        chat_id: chat_id,
-        type: :private,
-        participants: ["alice", "bob"],
-        messages: []
-      })
-
+    {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
     %{chat_id: chat_id}
   end
 

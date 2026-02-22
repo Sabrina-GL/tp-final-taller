@@ -1,7 +1,17 @@
 defmodule ChatApp.ActivityServer do
+  @moduledoc """
+  Gestiona el estado de actividad de cada usuario, incluyendo su estado en línea, última conexión y notificaciones pendientes.
+
+  Este GenServer se inicia para cada usuario conectado y mantiene:
+  - El estado actual del usuario (online/offline)
+  - La última vez que estuvo en línea
+  - Cola de notificaciones pendientes (nuevos mensajes, cambios de estado de contactos, etc.)
+
+  Las notificaciones pendientes se entregan cuando el usuario se conecta, y los cambios de estado se notifican a los contactos en tiempo real.
+  """
   use GenServer
 
-  # Client API
+  # ========= Client API ==========
   def start_link(username) do
     GenServer.start_link(__MODULE__, username, name: via_tuple(username))
   end
@@ -40,6 +50,7 @@ defmodule ChatApp.ActivityServer do
     GenServer.call(via_tuple(username), :consume_pending)
   end
 
+  # ========= GenServer Callbacks ==========
   def init(username) do
     {:ok, %{username: username, status: :offline, last_seen: nil, pending: []}}
   end
@@ -95,6 +106,7 @@ defmodule ChatApp.ActivityServer do
     {:noreply, state}
   end
 
+  # ========== Helpers ==========
   defp notify_contacts_online(username, online) do
     case ChatApp.Accounts.get_contacts_who_added_user(username) do
       {:ok, contacts} ->

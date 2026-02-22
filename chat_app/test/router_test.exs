@@ -2,32 +2,6 @@ defmodule ChatWeb.RouterTest do
   use ChatApp.DataCase, async: false
   import Plug.Test
   import Plug.Conn
-  alias ChatApp.{Accounts, ActivityServer, Repo}
-
-  setup do
-    # Clear database before each test
-    Repo.delete_all(ChatApp.Schemas.User)
-    Repo.delete_all(ChatApp.Schemas.Message)
-
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
-    # Register test users
-    Accounts.register_user("testuser", "pass123")
-
-    # Start ActivityServer for testuser
-    case ChatApp.ActivitySupervisor.start_activity_server("testuser") do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-    end
-
-    ActivityServer.user_online("testuser")
-
-    :ok
-  end
 
   describe "Router HTTP requests" do
     test "GET / returns register.html" do
@@ -84,6 +58,9 @@ defmodule ChatWeb.RouterTest do
     end
 
     test "POST /api/login with valid credentials succeeds" do
+      create_test_users(["testuser"])
+      start_activity_servers(["testuser"])
+      ChatApp.ActivityServer.user_online("testuser")
       body = Jason.encode!(%{username: "testuser", password: "pass123"})
 
       conn =
@@ -112,6 +89,9 @@ defmodule ChatWeb.RouterTest do
     end
 
     test "GET /api/status for online user" do
+      create_test_users(["testuser"])
+      start_activity_servers(["testuser"])
+      ChatApp.ActivityServer.user_online("testuser")
       conn = conn(:get, "/api/status?user=testuser")
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
 
@@ -123,7 +103,6 @@ defmodule ChatWeb.RouterTest do
 
     test "GET /api/status for offline user" do
       ChatApp.Accounts.register_user("offlineuser", "pass123")
-      # ChatApp.ActivityServer.user_offline("offlineuser")
       Registry.unregister(ChatApp.UsersRegistry, "offlineuser")
       conn = conn(:get, "/api/status?user=offlineuser")
       conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))

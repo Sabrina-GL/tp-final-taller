@@ -1,30 +1,10 @@
 defmodule ChatApp.NotificationsTest do
   use ChatApp.DataCase, async: false
-
-  alias ChatApp.{Accounts, Notifications, ActivitySupervisor, Repo}
+  alias ChatApp.Notifications
 
   setup do
-    # Clear database before each test
-    Repo.delete_all(ChatApp.Schemas.User)
-    Repo.delete_all(ChatApp.Schemas.Message)
-
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
-    # Register test users
-    Accounts.register_user("alice", "pass123")
-    Accounts.register_user("bob", "pass123")
-
-    for user <- ["alice", "bob"] do
-      case ActivitySupervisor.start_activity_server(user) do
-        {:ok, _pid} -> :ok
-        {:error, {:already_started, _pid}} -> :ok
-      end
-    end
-
+    create_test_users(["alice", "bob"])
+    start_activity_servers(["alice", "bob"])
     :ok
   end
 
@@ -46,7 +26,6 @@ defmodule ChatApp.NotificationsTest do
 
       result = Notifications.notify_new_chatroom("bob", "test_chat")
 
-      # Should return :offline since user is not in registry
       assert result == :offline
     end
   end

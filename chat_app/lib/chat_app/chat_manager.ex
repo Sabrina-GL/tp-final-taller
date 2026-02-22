@@ -1,13 +1,23 @@
 defmodule ChatApp.ChatManager do
-  # use GenServer
+  @moduledoc """
+  Módulo central para la gestión de chats, incluyendo creación de salas, manejo de mensajes y consultas relacionadas.
+
+  Este módulo se encarga de:
+  - Crear chats privados entre dos usuarios
+  - Crear chats grupales con múltiples participantes
+  - Consultar los chats a los que pertenece un usuario
+  - Asegurar que los procesos de chat estén activos para cada chatroom
+  - Validar condiciones de bloqueo y existencia de usuarios antes de crear chats
+  """
   import Ecto.Query
   alias ChatApp.Schemas.{Chatroom}
   alias ChatApp.{Repo, Accounts, ChatRoomSupervisor, Notifications}
 
-  def init(state) do
-    {:ok, state}
-  end
+  # def init(state) do
+  #   {:ok, state}
+  # end
 
+  # ========= Chats Privados ==========
   def create_private_chat(user1, user2) do
     cond do
       user1 == user2 ->
@@ -30,16 +40,7 @@ defmodule ChatApp.ChatManager do
               |> Chatroom.create_private_changeset(user1, user2)
               |> Repo.insert()
 
-            case ChatRoomSupervisor.start_chatroom(%{
-                   chat_id: chat_id,
-                   type: :private,
-                   participants: participants,
-                   messages: []
-                 }) do
-              {:ok, _pid} -> :ok
-              {:error, {:already_started, _pid}} -> :ok
-            end
-
+            start_chatroom_process(chat_id, :private, participants)
             # Notifico solo al usuario agregado
             Notifications.notify_new_chatroom(user2, chat_id)
 
@@ -52,6 +53,7 @@ defmodule ChatApp.ChatManager do
     end
   end
 
+  # ========= Chats Grupales ==========
   def create_group_chat(creator, group_name, participants) do
     chat_id = "group:" <> group_name
     all_participants = [creator | participants] |> Enum.uniq()
@@ -62,22 +64,12 @@ defmodule ChatApp.ChatManager do
         nil ->
           {:ok, _chatroom} =
             %Chatroom{}
-            |> Chatroom.create_group_changeset(creator, group_name, participants)
+            |> Chatroom.create_group_changeset(creator, group_name, all_participants)
             |> Repo.insert()
 
-          case ChatRoomSupervisor.start_chatroom(%{
-                 chat_id: chat_id,
-                 group_name: group_name,
-                 type: :group,
-                 participants: all_participants,
-                 messages: []
-               }) do
-            {:ok, _pid} -> :ok
-            {:error, {:already_started, _pid}} -> :ok
-          end
+          start_chatroom_process(chat_id, :group, all_participants, group_name)
 
           Enum.each(all_participants, fn user ->
-            # Accounts.add_chatroom(user, chat_id)
             # Solo notificar a los participantes que no son el creador
             if user != creator do
               Notifications.notify_new_chatroom(user, chat_id)
@@ -102,6 +94,7 @@ defmodule ChatApp.ChatManager do
     end
   end
 
+  # ========== Consultas de Chats ==========
   def get_user_chatrooms(user) do
     with true <- Accounts.account_exists?(user) do
       query =
@@ -111,15 +104,14 @@ defmodule ChatApp.ChatManager do
         )
 
       chat_ids = Repo.all(query)
-
       Enum.each(chat_ids, &ensure_room_running/1)
-
       chat_ids
     else
       false -> {:error, :user_not_found}
     end
   end
 
+  # ========= Helpers ==========
   defp ensure_room_running(chat_id) do
     case Registry.lookup(ChatApp.ChatRoomsRegistry, chat_id) do
       [] ->
@@ -134,6 +126,19 @@ defmodule ChatApp.ChatManager do
 
       _ ->
         :ok
+    end
+  end
+
+  defp start_chatroom_process(chat_id, type, participants, group_name \\ nil) do
+    case ChatRoomSupervisor.start_chatroom(%{
+           chat_id: chat_id,
+           type: type,
+           group_name: group_name,
+           participants: participants,
+           messages: []
+         }) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
     end
   end
 end

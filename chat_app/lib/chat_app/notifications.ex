@@ -1,4 +1,15 @@
 defmodule ChatApp.Notifications do
+  @doc """
+  Módulo encargado de gestionar las notificaciones en la aplicación de chat.
+
+  Este módulo se encarga de enviar notificaciones a los usuarios cuando ocurren eventos relevantes, como:
+  - Creación de nuevas salas de chat
+  - Recepción de nuevos mensajes
+  - Agregados como contacto por otros usuarios
+
+  Las notificaciones se envían en tiempo real si el usuario está en línea,
+  o se almacenan como pendientes para ser entregadas cuando el usuario se conecte.
+  """
   alias ChatApp.{ActivityServer, ActivitySupervisor}
 
   def notify_new_chatroom(user, chat_id) do

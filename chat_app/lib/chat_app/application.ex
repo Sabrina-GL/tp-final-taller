@@ -1,4 +1,10 @@
 defmodule ChatApp.Application do
+  @moduledoc """
+  Módulo principal de la aplicación ChatApp.
+
+  Define el arbol de supervisión y configuracion incial de la aplicación.
+  Inicia los repositorios, registros, supervisores y el servidor web.
+  """
   use Application
   require Logger
 

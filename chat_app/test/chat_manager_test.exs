@@ -1,31 +1,10 @@
 defmodule ChatManagerTest do
-  use ChatApp.DataCase
+  use ChatApp.DataCase, async: false
   alias ChatApp.{ChatManager, Accounts, Repo}
 
   setup do
-    # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Chatroom)
-
-    # Clear in-memory metadata for accounts
-    # case :ets.whereis(:accounts_metadata) do
-    #   :undefined -> :ok
-    #   tid -> :ets.delete_all_objects(tid)
-    # end
-
-    # Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
-
-    Accounts.register_user("alice", "pass123")
-    Accounts.register_user("bob", "pass234")
-
-    Enum.each(["alice", "bob"], fn user ->
-      case ChatApp.ActivitySupervisor.start_activity_server(user) do
-        {:ok, _pid} -> :ok
-        {:error, {:already_started, _pid}} -> :ok
-      end
-    end)
-
+    create_test_users(["alice", "bob", "carol"])
+    start_activity_servers(["alice", "bob", "carol"])
     :ok
   end
 
@@ -168,18 +147,4 @@ defmodule ChatManagerTest do
       assert Enum.sort(chatrooms) == Enum.sort([chat_id1, chat_id2])
     end
   end
-
-  # describe "search_messages" do
-  #   test "search_messages returns error for non-existent chat" do
-  #     {:error, reason} = ChatManager.search_messages("nonexistent_chat", "keyword")
-  #     assert reason == :chat_not_found
-  #   end
-
-  #   test "search_messages finds messages by keyword" do
-  #     {:ok, chat_id} = ChatManager.get_or_create_private_chat("alice", "bob")
-  #     ChatRoom.add_message(chat_id, "alice", "Hello Elixir")
-  #     ChatRoom.add_message(chat_id, "bob", "Hello World")
-  #     {:ok, results} = ChatManager.search_messages(chat_id, "Elixir")
-  #     assert Enum.count(results) >= 1
-  #   end
 end

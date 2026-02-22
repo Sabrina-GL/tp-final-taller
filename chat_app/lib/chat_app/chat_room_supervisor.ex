@@ -1,4 +1,10 @@
 defmodule ChatApp.ChatRoomSupervisor do
+  @moduledoc """
+  Supervisor dinámico para gestionar los GenServers de cada sala de chat.
+
+  Este módulo se encarga de iniciar y supervisar un GenServer para cada sala de chat activa.
+  Utiliza un DynamicSupervisor para permitir la creación dinámica de procesos a medida que se crean nuevas salas de chat.
+  """
   use DynamicSupervisor
 
   def start_link(_) do

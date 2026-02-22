@@ -1,25 +1,18 @@
 defmodule AccountsTest do
-  use ChatApp.DataCase
+  use ChatApp.DataCase, async: false
   alias ChatApp.Accounts
 
   setup do
-    # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
-
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
+    create_test_users(["alice", "bob", "carol"])
+    start_activity_servers(["alice", "bob", "carol"])
     :ok
   end
 
   describe "register_user" do
     test "register_user creates a new user" do
       assert :ok = ChatApp.Accounts.register_user("testuser", "password123")
-      # Verify user was registered
+      assert {:ok, user} = ChatApp.Accounts.get_user("testuser")
+      assert user.username == "testuser"
     end
 
     test "register_user rejects duplicate username" do
@@ -64,13 +57,6 @@ defmodule AccountsTest do
   end
 
   describe "get_contacts" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "get_contacts returns empty list for new user" do
       {:ok, contacts} = Accounts.get_contacts("alice")
       assert contacts == []
@@ -82,13 +68,6 @@ defmodule AccountsTest do
   end
 
   describe "add_contact" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "add_contact adds a contact to user's contact list" do
       assert :ok = Accounts.add_contact("alice", "bob")
       {:ok, contacts} = Accounts.get_contacts("alice")
@@ -124,13 +103,6 @@ defmodule AccountsTest do
   end
 
   describe "block_contact" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "block_contact blocks interaction and prevents adding contact" do
       assert :ok = Accounts.block_contact("alice", "bob")
       assert {:error, :contact_blocked} = Accounts.add_contact("alice", "bob")
@@ -168,13 +140,6 @@ defmodule AccountsTest do
   end
 
   describe "get_blocked_contacts" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "get_blocked_contacts returns list of blocked contacts" do
       Accounts.register_user("charlie", "pass345")
       Accounts.block_contact("alice", "bob")
@@ -211,13 +176,6 @@ defmodule AccountsTest do
   end
 
   describe "unblock_contact" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "unblock_contact unblocks a previously blocked contact" do
       Accounts.register_user("charlie", "pass345")
       Accounts.block_contact("alice", "charlie")
@@ -239,13 +197,6 @@ defmodule AccountsTest do
   end
 
   describe "delete_contact" do
-    setup do
-      # Setup test users
-      Accounts.register_user("alice", "pass123")
-      Accounts.register_user("bob", "pass234")
-      :ok
-    end
-
     test "delete_contact removes contact from user's contact list" do
       Accounts.register_user("charlie", "pass345")
       Accounts.add_contact("alice", "charlie")

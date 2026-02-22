@@ -2,34 +2,13 @@ defmodule ChatAppTest do
   use ChatApp.DataCase, async: false
 
   setup do
-    # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Chatroom)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Contact)
-
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
-    # Clean up any existing chat rooms in Registry
-    try do
-      Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
-      |> Enum.each(fn pid ->
-        if Process.alive?(pid), do: Process.exit(pid, :kill)
-      end)
-    rescue
-      _e -> :ok
-    end
-
+    create_test_users(["alice", "bob", "carol", "dave"])
+    start_activity_servers(["alice", "bob", "carol", "dave"])
     :ok
   end
 
   describe "Accounts" do
     test "registers and authenticates users with hashing" do
-      assert :ok = ChatApp.Accounts.register_user("alice", "pass123")
       assert :ok = ChatApp.Accounts.authenticate_user("alice", "pass123")
       assert {:error, :invalid_credentials} = ChatApp.Accounts.authenticate_user("alice", "wrong")
 
@@ -183,8 +162,8 @@ defmodule ChatAppTest do
     end
 
     test "group chat allows multiple members" do
-      _ = ChatApp.ActivityServer.start_link("dave")
       ChatApp.Accounts.register_user("dave", "pass123")
+      _ = ChatApp.ActivityServer.start_link("dave")
       {:ok, chat_id} = ChatApp.ChatManager.create_group_chat("bob", "biggroup", ["carol", "dave"])
 
       ChatApp.ChatRoomServer.add_message(chat_id, "bob", "msg1")

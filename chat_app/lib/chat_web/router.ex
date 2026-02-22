@@ -1,6 +1,15 @@
 defmodule ChatWeb.Router do
+  @moduledoc """
+  Módulo de enrutamiento para la aplicación ChatApp.
+
+  Maneja:
+  - Rutas HTTP para servir archivos estáticos y manejar solicitudes de registro, inicio de sesión y estado de usuarios.
+  - Ruta para actualizar a WebSocket, permitiendo la comunicación en tiempo real entre clientes y el servidor.
+  - Rutas para servir archivos subidos por los usuarios.
+  """
   use Plug.Router
 
+  # ======= Configuración de plugs ========
   plug(Plug.Static,
     at: "/static",
     from: :chat_app,
@@ -17,10 +26,8 @@ defmodule ChatWeb.Router do
 
   plug(:dispatch)
 
+  # ======= Rutas ========
   get "/" do
-    # conn
-    # |> put_resp_content_type("location", "/register")
-    # |> send_resp(302, "")
     send_file(conn, 200, "priv/static/register.html")
   end
 
@@ -36,6 +43,7 @@ defmodule ChatWeb.Router do
     send_file(conn, 200, "priv/static/index.html")
   end
 
+  # ======= API Endpoints ========
   post "/api/register" do
     %{"username" => user, "password" => pass} = conn.body_params
 
@@ -86,8 +94,8 @@ defmodule ChatWeb.Router do
     end
   end
 
+  # ====== WebSocket Endpoint ========
   get "/ws" do
-    # Plug.Conn.upgrade_adapter(conn, :websocket, {ChatWeb.SocketHandler, %{}, %{}})
     user = conn.params["user"]
 
     if user && user != "" do
@@ -101,6 +109,7 @@ defmodule ChatWeb.Router do
     end
   end
 
+  # ====== Archivos subidos ======
   get "/uploads/:filename" do
     filename = conn.params["filename"]
     file_path = ChatApp.FileManager.get_file_path("uploads/#{filename}")
@@ -114,10 +123,12 @@ defmodule ChatWeb.Router do
     end
   end
 
+  # ====== 404 ======
   match _ do
     send_resp(conn, 404, "not found")
   end
 
+  # ====== Helpers ======
   defp send_json_resp(conn, status, data) do
     conn
     |> Plug.Conn.put_resp_header("content-type", "application/json; charset=utf-8")

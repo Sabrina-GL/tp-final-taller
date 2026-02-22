@@ -3,52 +3,8 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   alias ChatWeb.SocketHandler
 
   setup do
-    # Clear database before each test
-    ChatApp.Repo.delete_all(ChatApp.Schemas.User)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Message)
-    ChatApp.Repo.delete_all(ChatApp.Schemas.Chatroom)
-
-    # Clear in-memory metadata for accounts
-    case :ets.whereis(:accounts_metadata) do
-      :undefined -> :ok
-      tid -> :ets.delete_all_objects(tid)
-    end
-
-    try do
-      Registry.unregister_match(ChatApp.UsersRegistry, :_, :_)
-    rescue
-      _e -> :ok
-    end
-
-    Registry.select(ChatApp.ChatRoomsRegistry, [{{:"$1", :"$2", :"$3"}, [], [:"$2"]}])
-    |> Enum.each(fn pid -> if Process.alive?(pid), do: Process.exit(pid, :kill) end)
-
-    Registry.unregister_match(ChatApp.ChatRoomsRegistry, :_, :_)
-
-    # Iniciar o reutilizar ActivityServer para cada usuario de test
-    case ChatApp.ActivityServer.start_link("alice") do
-      {:ok, _} -> :ok
-      {:error, {:already_started, _}} -> :ok
-    end
-
-    case ChatApp.ActivityServer.start_link("bob") do
-      {:ok, _} -> :ok
-      {:error, {:already_started, _}} -> :ok
-    end
-
-    case ChatApp.ActivityServer.start_link("carol") do
-      {:ok, _} -> :ok
-      {:error, {:already_started, _}} -> :ok
-    end
-
-    # Resetear estado inicial de los usuarios
-    ChatApp.ActivityServer.consume_pending("alice")
-    ChatApp.ActivityServer.user_offline("alice")
-    ChatApp.ActivityServer.consume_pending("bob")
-    ChatApp.ActivityServer.user_offline("bob")
-    ChatApp.ActivityServer.consume_pending("carol")
-    ChatApp.ActivityServer.user_offline("carol")
-
+    create_test_users(["alice", "bob", "carol"])
+    start_activity_servers(["alice", "bob", "carol"])
     :ok
   end
 
@@ -64,7 +20,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle get_contacts returns empty list" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     state = %{user: "alice"}
     msg = Jason.encode!(%{"action" => "get_contacts"})
 
@@ -76,7 +31,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle get_chatrooms returns empty list" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     state = %{user: "alice"}
     msg = Jason.encode!(%{"action" => "get_chatrooms"})
 
@@ -88,9 +42,8 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle add_contact returns error when user missing" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     state = %{user: "alice"}
-    msg = Jason.encode!(%{"action" => "add_contact", "contact" => "bob"})
+    msg = Jason.encode!(%{"action" => "add_contact", "contact" => "bobless"})
 
     assert {:reply, {:text, reply}, ^state} =
              SocketHandler.websocket_handle({:text, msg}, state)
@@ -100,8 +53,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle add_contact succeeds and opens chat" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
     state = %{user: "alice"}
     msg = Jason.encode!(%{"action" => "add_contact", "contact" => "bob"})
 
@@ -115,8 +66,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle block_contact blocks user" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
     state = %{user: "alice"}
 
     msg = Jason.encode!(%{"action" => "block_contact", "contact" => "bob"})
@@ -130,7 +79,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle get_status returns online status" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     ChatApp.ActivityServer.user_online("alice")
 
     state = %{user: "alice"}
@@ -146,9 +94,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle get_messages returns messages list" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
-
     {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
     ChatApp.ChatRoomServer.add_message(chat_id, "alice", "Hola")
 
@@ -163,10 +108,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle create_group_chat returns success" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
-    ChatApp.Accounts.register_user("carol", "pass123")
-
     group_name = "team_#{System.unique_integer([:positive])}"
     state = %{user: "alice"}
 
@@ -186,10 +127,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle send_message returns error when not participant" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
-    ChatApp.Accounts.register_user("carol", "pass123")
-
     {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("bob", "carol")
 
     state = %{user: "alice"}
@@ -210,9 +147,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle send_message returns message on success" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
-
     {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
 
     state = %{user: "alice"}
@@ -233,8 +167,8 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_handle delete_message deletes an existing message" do
-    ChatApp.Accounts.register_user("alice", "pass123")
-    ChatApp.Accounts.register_user("bob", "pass123")
+    assert {:ok, _} = ChatApp.Accounts.get_user("alice")
+    assert {:ok, _} = ChatApp.Accounts.get_user("bob")
 
     {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
     message = ChatApp.ChatRoomServer.add_message(chat_id, "alice", "Delete me")
@@ -286,7 +220,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "terminate marks user offline" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     ChatApp.ActivityServer.user_online("alice")
 
     assert :ok = SocketHandler.terminate(:normal, nil, %{user: "alice"})
@@ -294,7 +227,6 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   end
 
   test "websocket_init registers user and flushes pending" do
-    ChatApp.Accounts.register_user("alice", "pass123")
     ChatApp.ActivityServer.add_pending("alice", {:new_chatroom, "room1"})
 
     assert {:ok, %{user: "alice"}} = SocketHandler.websocket_init(%{user: "alice"})

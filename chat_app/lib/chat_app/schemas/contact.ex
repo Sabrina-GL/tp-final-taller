@@ -19,9 +19,4 @@ defmodule ChatApp.Schemas.Contact do
     |> validate_inclusion(:status, ["active", "blocked"])
     |> unique_constraint([:user_id, :contact_id])
   end
-
-  # def create_changeset(contact, attrs) do
-  #   contact
-  #   |> changeset(attrs)
-  # end
 end

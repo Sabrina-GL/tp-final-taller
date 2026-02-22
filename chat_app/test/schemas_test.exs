@@ -1,16 +1,7 @@
 defmodule ChatApp.SchemasTest do
-  use ChatApp.DataCase
+  use ChatApp.DataCase, async: false
   alias ChatApp.Schemas.{Message, User, Contact, Chatroom}
   alias ChatApp.Repo
-
-  setup do
-    # Clear database before each test
-    Repo.delete_all(Message)
-    Repo.delete_all(Contact)
-    Repo.delete_all(Chatroom)
-    Repo.delete_all(User)
-    :ok
-  end
 
   describe "Message schema" do
     test "changeset validates required fields" do
