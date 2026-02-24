@@ -10,8 +10,8 @@ Se toma como **fuente canónica** para métricas de tests/cobertura en el proyec
 ### Última corrida registrada
 
 - Comando: `mix test --cover`
-- Resultado tests: `133 tests, 0 failures`
-- Cobertura total: `81.77%`
+- Resultado tests: `166 tests, 0 failures`
+- Cobertura total: `80.22%`
 - Umbral configurado: `80.00%`
 - Estado del comando: exitoso (exit code 0)
 - Vigencia: estos valores corresponden a la última actualización de este documento.

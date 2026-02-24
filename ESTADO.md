@@ -58,8 +58,8 @@
 
 ## Testing y calidad
 
-- Última corrida registrada: `133 tests, 0 failures`
-- Cobertura registrada: `81.77%` (umbral `80%`)
+- Última corrida registrada: `166 tests, 0 failures`
+- Cobertura registrada: `80.22%` (umbral `80%`)
 - Fuente canónica y procedimiento: [COBERTURA_TESTS.md](COBERTURA_TESTS.md)
 
 ## Pendiente

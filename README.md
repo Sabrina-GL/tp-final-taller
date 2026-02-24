@@ -76,8 +76,8 @@ cd chat_app && mix test --cover
 ```
 
 Última corrida registrada (vigente a la fecha de actualización):
-- `133 tests, 0 failures`
-- Cobertura total: `81.77%` (umbral `80%`)
+- `166 tests, 0 failures`
+- Cobertura total: `80.22%` (umbral `80%`)
 
 Fuente canónica de métricas y procedimiento: [COBERTURA_TESTS.md](COBERTURA_TESTS.md).
 

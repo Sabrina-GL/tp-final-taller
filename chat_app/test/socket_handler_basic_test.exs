@@ -78,6 +78,47 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert data["contact"] == "bob"
   end
 
+  test "websocket_handle get_blocked_contacts devuelve bloqueados" do
+    :ok = ChatApp.Accounts.block_contact("alice", "bob")
+
+    state = %{user: "alice"}
+    msg = Jason.encode!(%{"action" => "get_blocked_contacts"})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert "bob" in data["blocked_contacts"]
+  end
+
+  test "websocket_handle unblock_contact desbloquea usuario" do
+    :ok = ChatApp.Accounts.block_contact("alice", "bob")
+    state = %{user: "alice"}
+
+    msg = Jason.encode!(%{"action" => "unblock_contact", "contact" => "bob"})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "contact_unblocked"
+    assert data["contact"] == "bob"
+  end
+
+  test "websocket_handle delete_contact elimina contacto" do
+    assert :ok = ChatApp.Accounts.add_contact("alice", "bob")
+    state = %{user: "alice"}
+
+    msg = Jason.encode!(%{"action" => "delete_contact", "contact" => "bob"})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "contact_deleted"
+    assert data["contact"] == "bob"
+  end
+
   test "websocket_handle get_status returns online status" do
     ChatApp.ActivityServer.user_online("alice")
 
@@ -166,6 +207,54 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert data["message"]["msg_content"] == "Hello"
   end
 
+  test "websocket_handle send_file guarda adjunto y responde ok" do
+    {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
+    file_content = Base.encode64("contenido de archivo")
+
+    state = %{user: "alice"}
+
+    msg =
+      Jason.encode!(%{
+        "action" => "send_file",
+        "chat_id" => chat_id,
+        "file_content" => file_content,
+        "file_name" => "prueba.txt",
+        "file_type" => "text/plain"
+      })
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "ok"
+    assert data["type"] == "file"
+    assert data["message"]["file_name"] == "prueba.txt"
+    assert is_integer(data["message"]["file_size"])
+    assert is_binary(data["message"]["file_path"])
+
+    assert :ok = ChatApp.FileManager.delete_file(data["message"]["file_path"])
+  end
+
+  test "websocket_handle send_file retorna error cuando falta file_name" do
+    {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
+    state = %{user: "alice"}
+
+    msg =
+      Jason.encode!(%{
+        "action" => "send_file",
+        "chat_id" => chat_id,
+        "file_content" => Base.encode64("abc"),
+        "file_type" => "text/plain"
+      })
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "error"
+    assert data["error"] == "Missing required field: file_name"
+  end
+
   test "websocket_handle delete_message deletes an existing message" do
     assert {:ok, _} = ChatApp.Accounts.get_user("alice")
     assert {:ok, _} = ChatApp.Accounts.get_user("bob")
@@ -217,6 +306,37 @@ defmodule ChatWeb.SocketHandlerBasicTest do
   test "websocket_info ignores unknown info" do
     state = %{user: "alice"}
     assert {:ok, ^state} = SocketHandler.websocket_info(:unknown, state)
+  end
+
+  test "websocket_info added_as_contact returns payload" do
+    state = %{user: "alice"}
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_info({:added_as_contact, "bob"}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "added_as_contact"
+    assert data["contact"] == "bob"
+  end
+
+  test "websocket_info message_deleted returns payload" do
+    state = %{user: "alice"}
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_info({:message_deleted, "alice:bob", 10}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "message_deleted"
+    assert data["chat_id"] == "alice:bob"
+    assert data["message_id"] == 10
+  end
+
+  test "websocket_info websocket_message passthrough" do
+    state = %{user: "alice"}
+    payload = "{\"ping\":true}"
+
+    assert {:reply, {:text, ^payload}, ^state} =
+             SocketHandler.websocket_info({:websocket_message, payload}, state)
   end
 
   test "terminate marks user offline" do

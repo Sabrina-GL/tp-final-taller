@@ -152,4 +152,53 @@ defmodule ChatApp.ChatRoomTest do
                ChatRoomServer.delete_messages(chat_id, "charlie", [msg.id])
     end
   end
+
+  describe "file attachments" do
+    test "add_message con file_data guarda metadata de archivo", %{chat_id: chat_id} do
+      file_data = %{
+        base64_content: Base.encode64("contenido adjunto"),
+        filename: "adjunto.txt",
+        mime_type: "text/plain"
+      }
+
+      msg = ChatRoomServer.add_message(chat_id, "alice", nil, file_data: file_data)
+
+      assert msg.from == "alice"
+      assert msg.msg_content == "[File: adjunto.txt]"
+      assert msg.file_name == "adjunto.txt"
+      assert msg.file_type == "text/plain"
+      assert is_integer(msg.file_size)
+      assert is_binary(msg.file_path)
+
+      assert :ok = ChatApp.FileManager.delete_file(msg.file_path)
+    end
+
+    test "add_message con file_data inválido retorna error", %{chat_id: chat_id} do
+      file_data = %{
+        base64_content: "***invalid***",
+        filename: "mal.txt",
+        mime_type: "text/plain"
+      }
+
+      assert {:error, reason} =
+               ChatRoomServer.add_message(chat_id, "alice", nil, file_data: file_data)
+
+      assert String.contains?(reason, "Invalid base64 encoding")
+    end
+
+    test "delete_message elimina archivo físico asociado", %{chat_id: chat_id} do
+      file_data = %{
+        base64_content: Base.encode64("se elimina"),
+        filename: "delete_file.txt",
+        mime_type: "text/plain"
+      }
+
+      msg = ChatRoomServer.add_message(chat_id, "alice", nil, file_data: file_data)
+      full_path = ChatApp.FileManager.get_file_path(msg.file_path)
+      assert File.exists?(full_path)
+
+      assert :ok = ChatRoomServer.delete_message(chat_id, "alice", msg.id)
+      refute File.exists?(full_path)
+    end
+  end
 end
