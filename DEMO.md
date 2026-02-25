@@ -88,8 +88,6 @@ python3 client.py
 
 ## Extensión opcional: demo web (resumen)
 
-Si el jurado prefiere interfaz web:
-
 1. Abrir `http://localhost:4000` en dos ventanas (Alice y Bob)
 2. Registrar/login ambos usuarios
 3. Agregar contacto, enviar mensaje y validar recepción en vivo
