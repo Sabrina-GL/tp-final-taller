@@ -99,6 +99,7 @@ Si el jurado prefiere interfaz web:
 
 ```bash
 cd tp-final-taller
+make demo-smoke
 make test
 cd chat_app && mix test --cover
 ```

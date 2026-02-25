@@ -1,4 +1,4 @@
-.PHONY: help dev dev-docker test compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
+.PHONY: help dev dev-docker test demo-smoke compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
 
 # Color para output
 CYAN := \033[0;36m
@@ -21,7 +21,8 @@ help:
 	@echo "  make demo             Setup demo + pasos siguientes"
 	@echo ""
 	@echo "$(GREEN)Testing$(NC)"
-	@echo "  make test             Ejecuta tests (133 tests)"
+	@echo "  make test             Ejecuta tests (172 tests)"
+	@echo "  make demo-smoke       Valida demo automáticamente (login + WS + chat + archivo + offline)"
 	@echo "  make test-watch       Ejecuta tests en modo watch"
 	@echo ""
 	@echo "$(GREEN)Base de Datos$(NC)"
@@ -93,6 +94,10 @@ demo: demo-setup
 test:
 	# Ejecuta toda la suite de tests de Elixir.
 	@cd chat_app && mix test
+
+demo-smoke:
+	# Ejecuta validación automática de la demo de punta a punta.
+	@python3 scripts/demo_smoke.py
 
 test-watch:
 	# Ejecuta tests en modo escucha para re-ejecución interactiva.
