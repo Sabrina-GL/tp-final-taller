@@ -43,7 +43,7 @@ python3 client.py
 
 Servidor:
 - HTTP: `http://localhost:4000`
-- WebSocket: `ws://localhost:4000/ws?user=username`
+- WebSocket: `ws://localhost:4000/ws?token=<auth_token>`
 
 ## Capacidades implementadas
 
@@ -64,7 +64,7 @@ REST:
 - `POST /api/login`
 - `GET /api/status?user=username`
 
-WebSocket (`/ws?user=username`):
+WebSocket (`/ws?token=<auth_token>`):
 - Contactos/chats: `get_contacts`, `add_contact`, `block_contact`, `get_chatrooms`, `create_group_chat`, `get_status`.
 - Mensajes: `get_messages`, `send_message`, `send_file`, `delete_message`, `delete_messages`, `search_messages`.
 
@@ -76,7 +76,7 @@ cd chat_app && mix test --cover
 ```
 
 Última corrida registrada (vigente a la fecha de actualización):
-- `166 tests, 0 failures`
+- `172 tests, 0 failures`
 - Cobertura total: `80.22%` (umbral `80%`)
 
 Fuente canónica de métricas y procedimiento: [COBERTURA_TESTS.md](COBERTURA_TESTS.md).

@@ -40,6 +40,8 @@ defmodule ChatWeb.RouterTest do
       assert conn.status == 200
       data = Jason.decode!(conn.resp_body)
       assert data["status"] == "ok"
+      assert is_binary(data["token"])
+      assert data["user"] == "newuser"
     end
 
     test "POST /api/register with existing user fails" do
@@ -72,6 +74,8 @@ defmodule ChatWeb.RouterTest do
       assert conn.status == 200
       data = Jason.decode!(conn.resp_body)
       assert data["status"] == "ok"
+      assert is_binary(data["token"])
+      assert data["user"] == "testuser"
     end
 
     test "POST /api/login with invalid credentials fails" do
@@ -86,6 +90,22 @@ defmodule ChatWeb.RouterTest do
       assert conn.status == 401
       data = Jason.decode!(conn.resp_body)
       assert data["status"] == "error"
+    end
+
+    test "GET /ws without token returns 401" do
+      conn = conn(:get, "/ws")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 401
+      assert conn.resp_body == "Invalid token"
+    end
+
+    test "GET /ws with invalid token returns 401" do
+      conn = conn(:get, "/ws?token=invalid")
+      conn = ChatWeb.Router.call(conn, ChatWeb.Router.init([]))
+
+      assert conn.status == 401
+      assert conn.resp_body == "Invalid token"
     end
 
     test "GET /api/status for online user" do

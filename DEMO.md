@@ -113,5 +113,6 @@ make db-backup-verify-docker
 
 ## Troubleshooting mínimo
 
-- **Sin conexión WebSocket**: verificar `make docker-logs` y reiniciar cliente.
+- **Sin conexión WebSocket**: verificar `make docker-logs`; el cliente reintenta reconexión automática.
+- **Token inválido/expirado**: reloguear usuario para renovar sesión WebSocket.
 - **Error Docker socket**: usar comandos `-sudo` o `newgrp docker`.

@@ -49,7 +49,14 @@ defmodule ChatWeb.Router do
 
     case ChatApp.Accounts.register_user(user, pass) do
       :ok ->
-        send_json_resp(conn, 200, %{"status" => "ok", "message" => "User registered successfully"})
+        token = ChatApp.AuthToken.issue_token(user)
+
+        send_json_resp(conn, 200, %{
+          "status" => "ok",
+          "message" => "User registered successfully",
+          "user" => user,
+          "token" => token
+        })
 
       {:error, reason} ->
         send_json_resp(conn, 400, %{"status" => "error", "error" => to_string(reason)})
@@ -61,7 +68,14 @@ defmodule ChatWeb.Router do
 
     case ChatApp.Accounts.authenticate_user(user, pass) do
       :ok ->
-        send_json_resp(conn, 200, %{"status" => "ok", "message" => "Login successful"})
+        token = ChatApp.AuthToken.issue_token(user)
+
+        send_json_resp(conn, 200, %{
+          "status" => "ok",
+          "message" => "Login successful",
+          "user" => user,
+          "token" => token
+        })
 
       {:error, reason} ->
         send_json_resp(conn, 401, %{"status" => "error", "error" => to_string(reason)})
@@ -96,16 +110,18 @@ defmodule ChatWeb.Router do
 
   # ====== WebSocket Endpoint ========
   get "/ws" do
-    user = conn.params["user"]
+    token = conn.params["token"]
+    idle_timeout = Application.get_env(:chat_app, :ws_idle_timeout_ms, 900_000)
 
-    if user && user != "" do
+    with {:ok, user} <- ChatApp.AuthToken.verify_token(token) do
       Plug.Conn.upgrade_adapter(
         conn,
         :websocket,
-        {ChatWeb.SocketHandler, %{user: user}, %{}}
+        {ChatWeb.SocketHandler, %{user: user}, %{idle_timeout: idle_timeout}}
       )
     else
-      send_resp(conn, 400, "Missing user")
+      {:error, :expired_token} -> send_resp(conn, 401, "Token expired")
+      {:error, :invalid_token} -> send_resp(conn, 401, "Invalid token")
     end
   end
 

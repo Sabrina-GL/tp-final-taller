@@ -69,6 +69,8 @@ function logout() {
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
         window.ws.close();
     }
+    sessionStorage.removeItem("chat_user");
+    sessionStorage.removeItem("chat_token");
     window.location = "/login";
 }
 

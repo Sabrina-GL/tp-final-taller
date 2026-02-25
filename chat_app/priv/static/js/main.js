@@ -3,6 +3,7 @@ let activeSection = null;
 window.App = window.App || {};
 window.ws = null;
 window.currentUser = null;
+window.currentToken = null;
 window.currentChatRoom = null;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -10,17 +11,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const sidebar = document.getElementById("sidebar");
 
-    // Obtener usuario de la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const username = urlParams.get('user');
+    const username = sessionStorage.getItem("chat_user");
+    const token = sessionStorage.getItem("chat_token");
 
-    if (!username) {
+    if (!username || !token) {
         window.location = "/login";
         return;
     }
 
     console.log("Usuario:", username);
     window.currentUser = username;
+    window.currentToken = token;
 
     // Inicializar módulos
     initSidebar();
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initNotifications();
 
     // Iniciar WebSocket
-    connectWebSocket(username);
+    connectWebSocket(username, token);
 
     // Event listeners de botones principales
     document.getElementById('add-contact-btn')?.addEventListener('click', addContact);
@@ -40,14 +41,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // =========== WebSocket ===========
 
-function connectWebSocket(username) {
+function connectWebSocket(username, token) {
     if (window.ws && (window.ws.readyState === WebSocket.OPEN || window.ws.readyState === WebSocket.CONNECTING)) {
         window.ws.close();
     }
 
     console.log("Conectando al usuario:", username);
-    const WS_URL = `ws://${window.location.host}`;
-    window.ws = new WebSocket(`${WS_URL}/ws?user=${username}`);
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const WS_URL = `${protocol}://${window.location.host}`;
+    window.ws = new WebSocket(`${WS_URL}/ws?token=${encodeURIComponent(token)}`);
 
     window.ws.onopen = function () {
         console.log("WebSocket conectado");
@@ -126,10 +128,13 @@ function connectWebSocket(username) {
 
     window.ws.onclose = function (e) {
         console.log("WebSocket cerrado:", e);
+        if (!window.currentUser || !window.currentToken) {
+            return;
+        }
         // Intentar reconectar después de 1 segundo
         setTimeout(() => {
             console.log("Reconectando...");
-            connectWebSocket(window.currentUser);
+            connectWebSocket(window.currentUser, window.currentToken);
         }, 1000);
     };
 }

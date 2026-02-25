@@ -7,6 +7,7 @@ YELLOW := \033[0;33m
 NC := \033[0m # No Color
 
 help:
+	# Muestra el listado de comandos disponibles y su propósito.
 	@echo "$(CYAN)🎬 Chat App - Comandos Disponibles$(NC)"
 	@echo ""
 	@echo "$(GREEN)Desarrollo$(NC)"
@@ -51,44 +52,55 @@ help:
 
 # Desarrollo
 dev:
+	# Inicia el servidor local de Elixir en modo interactivo.
 	@cd chat_app && iex -S mix
 
 dev-docker:
+	# Levanta la app con Docker Compose en primer plano.
 	@docker compose up --build
 
 compile:
+	# Compila el proyecto Elixir y valida que no haya errores de build.
 	@cd chat_app && mix compile
 
 deps:
+	# Descarga e instala dependencias de Elixir.
 	@cd chat_app && mix deps.get
 
 setup: deps
+	# Setup rápido: instala deps Python y resetea la base de datos de desarrollo.
 	@pip install -r requirements.txt
 	@$(MAKE) db-reset
 	@echo "$(GREEN)✓ Setup completado (Elixir + Python + BD limpia)$(NC)"
 
 setup-dockerized:
+	# Setup rápido usando Docker sin sudo (levanta y muestra estado).
 	@$(MAKE) docker-up
 	@$(MAKE) docker-status
 	@echo "$(GREEN)✓ Setup Docker completado$(NC)"
 
 setup-dockerized-sudo:
+	# Setup rápido usando Docker con sudo (levanta y muestra estado).
 	@$(MAKE) docker-up-sudo
 	@$(MAKE) docker-status-sudo
 	@echo "$(GREEN)✓ Setup Docker completado (sudo)$(NC)"
 
 demo: demo-setup
+	# Prepara la demo y confirma que el entorno quedó listo.
 	@echo "$(GREEN)✓ Demo lista para iniciar$(NC)"
 
 # Testing
 test:
+	# Ejecuta toda la suite de tests de Elixir.
 	@cd chat_app && mix test
 
 test-watch:
+	# Ejecuta tests en modo escucha para re-ejecución interactiva.
 	@cd chat_app && mix test --listen-on-stdin
 
 # Base de Datos
 db-reset:
+	# Resetea la BD de desarrollo: drop + create + migrate.
 	@cd chat_app && \
 	echo "$(YELLOW)🗑️  Eliminando BD PostgreSQL (si existe)...$(NC)" && \
 	MIX_ENV=dev mix ecto.drop || true && \
@@ -99,10 +111,12 @@ db-reset:
 	echo "$(GREEN)✓ BD lista para usar$(NC)"
 
 db-clean:
+	# Elimina únicamente la BD de desarrollo.
 	@cd chat_app && MIX_ENV=dev mix ecto.drop || true
 	@echo "$(GREEN)✓ BD de desarrollo eliminada$(NC)"
 
 db-backup-docker:
+	# Genera backup de PostgreSQL en Docker y mantiene los 7 más recientes.
 	@mkdir -p backups/postgres
 	@FILE=backups/postgres/chat_app_dev_$$(date +%Y%m%d_%H%M%S).dump; \
 	(echo "$(YELLOW)📦 Generando backup Docker en $$FILE...$(NC)" && \
@@ -112,6 +126,7 @@ db-backup-docker:
 	ls -1t backups/postgres/chat_app_dev_*.dump 2>/dev/null | tail -n +8 | xargs -r rm -f
 
 db-restore-docker:
+	# Restaura un dump en una BD Docker (por defecto chat_app_restore).
 	@test -n "$(FILE)" || (echo "Uso: make db-restore-docker FILE=backups/postgres/<archivo.dump> [RESTORE_DB=chat_app_restore]" && exit 1)
 	@test -f "$(FILE)" || (echo "Archivo no encontrado: $(FILE)" && exit 1)
 	@DB_NAME=$${RESTORE_DB:-chat_app_restore}; \
@@ -123,6 +138,7 @@ db-restore-docker:
 	echo "$(GREEN)✓ Restore completado en $$DB_NAME$(NC)"
 
 db-backup-local:
+	# Genera backup de PostgreSQL local y mantiene los 7 más recientes.
 	@mkdir -p backups/postgres
 	@FILE=backups/postgres/chat_app_dev_$$(date +%Y%m%d_%H%M%S).dump; \
 	echo "$(YELLOW)📦 Generando backup local en $$FILE...$(NC)" && \
@@ -131,6 +147,7 @@ db-backup-local:
 	ls -1t backups/postgres/chat_app_dev_*.dump 2>/dev/null | tail -n +8 | xargs -r rm -f
 
 db-restore-local:
+	# Restaura un dump en una BD local separada.
 	@test -n "$(FILE)" || (echo "Uso: make db-restore-local FILE=backups/postgres/<archivo.dump> [RESTORE_DB=chat_app_restore]" && exit 1)
 	@test -f "$(FILE)" || (echo "Archivo no encontrado: $(FILE)" && exit 1)
 	@DB_NAME=$${RESTORE_DB:-chat_app_restore}; \
@@ -140,6 +157,7 @@ db-restore-local:
 	echo "$(GREEN)✓ Restore completado en $$DB_NAME$(NC)"
 
 db-backup-verify-docker:
+	# Ejecuta backup + restore de prueba y valida consulta básica en messages.
 	@$(MAKE) db-backup-docker
 	@LATEST=$$(ls -1t backups/postgres/chat_app_dev_*.dump | head -n 1); \
 	echo "$(YELLOW)🧪 Verificando backup con restore de $$LATEST...$(NC)"; \
@@ -149,6 +167,7 @@ db-backup-verify-docker:
 	echo "$(GREEN)✓ Verificación OK: restore consultable (tabla messages accesible)$(NC)"
 
 demo-setup: db-reset
+	# Deja la BD limpia y muestra guía rápida para correr la demo.
 	@echo ""
 	@echo "$(CYAN)════════════════════════════════════════$(NC)"
 	@echo "$(GREEN)✓ BD limpia y lista para DEMO$(NC)"
@@ -170,6 +189,7 @@ demo-setup: db-reset
 
 # Limpieza
 clean:
+	# Limpia artefactos de compilación y dependencias locales de Elixir.
 	@cd chat_app && \
 	echo "$(YELLOW)🧹 Limpiando artifacts...$(NC)" && \
 	mix clean && \
@@ -177,10 +197,12 @@ clean:
 	echo "$(GREEN)✓ Limpieza completada$(NC)"
 
 mrproper: clean db-clean
+	# Limpieza profunda: artifacts + dependencias + BD de desarrollo.
 	@echo "$(GREEN)✓ Limpieza total completada (incluyendo deps y BD)$(NC)"
 	@echo "$(YELLOW)Ejecuta 'make deps' para reinstalar dependencias$(NC)"
 
 reset-all:
+	# Reinicio total del proyecto (Docker, BDs dev/test, caches y builds).
 	@echo "$(YELLOW)♻️  Reinicio total del proyecto...$(NC)"
 	@docker compose down -v >/dev/null 2>&1 || echo "$(YELLOW)⚠️  No se pudo bajar docker (permiso o no estaba levantado).$(NC)"
 	@cd chat_app && MIX_ENV=dev mix ecto.drop || true
@@ -191,38 +213,49 @@ reset-all:
 	@echo "$(YELLOW)Siguiente paso sugerido: make setup-dockerized$(NC)"
 
 docker-up:
+	# Levanta servicios de docker-compose en segundo plano.
 	@docker compose up -d || sg docker -c "docker compose up -d" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make setup-dockerized-sudo$(NC)" && exit 1)
 
 docker-down:
+	# Baja servicios de docker-compose.
 	@docker compose down || sg docker -c "docker compose down" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-down-sudo$(NC)" && exit 1)
 
 docker-logs:
+	# Muestra logs en vivo de los servicios de docker-compose.
 	@docker compose logs -f || sg docker -c "docker compose logs -f" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-logs-sudo$(NC)" && exit 1)
 
 docker-status:
+	# Muestra estado actual de contenedores de docker-compose.
 	@docker compose ps || sg docker -c "docker compose ps" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-status-sudo$(NC)" && exit 1)
 
 docker-reset:
+	# Reinicia entorno Docker: baja con volúmenes y vuelve a construir/levantar.
 	@docker compose down -v || sg docker -c "docker compose down -v" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
 	@docker compose up -d --build || sg docker -c "docker compose up -d --build" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
 
 docker-up-sudo:
+	# Levanta servicios de docker-compose usando sudo.
 	@sudo docker compose up -d
 
 docker-down-sudo:
+	# Baja servicios de docker-compose usando sudo.
 	@sudo docker compose down
 
 docker-status-sudo:
+	# Muestra estado de docker-compose usando sudo.
 	@sudo docker compose ps
 
 docker-logs-sudo:
+	# Muestra logs en vivo de docker-compose usando sudo.
 	@sudo docker compose logs -f
 
 docker-reset-sudo:
+	# Reinicia entorno Docker (down -v + up --build) usando sudo.
 	@sudo docker compose down -v
 	@sudo docker compose up -d --build
 
 setup-docker:
+	# Agrega el usuario al grupo docker para evitar usar sudo.
 	@echo "$(YELLOW)Agregando usuario al grupo docker...$(NC)"
 	@sudo usermod -aG docker $$USER
 	@echo "$(GREEN)✓ Completado.$(NC)"

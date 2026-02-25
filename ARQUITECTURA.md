@@ -38,7 +38,8 @@ ChatApp.Application
 
 1. Cliente llama `POST /api/register` o `POST /api/login`
 2. `Accounts` valida y persiste/consulta usuarios en PostgreSQL
-3. Cliente conecta WebSocket con `?user=username`
+3. Backend devuelve `auth_token` firmado
+4. Cliente conecta WebSocket con `?token=<auth_token>`
 
 ### 2) Mensaje en tiempo real
 

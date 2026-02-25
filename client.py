@@ -17,8 +17,13 @@ class ChatClient:
         self.ws_url = ws_url
         self.ws = None
         self.username = None
+        self.token = None
         self.running = False
         self.connected = False
+        self.ws_thread = None
+        self.reconnect_thread = None
+        self.reconnecting = False
+        self.manual_disconnect = False
         
     def register(self, username, password):
         """Registra un nuevo usuario"""
@@ -49,8 +54,16 @@ class ChatClient:
             )
             data = response.json()
             if response.status_code == 200:
+                token = data.get("token")
+                if not token:
+                    print("❌ Error: el servidor no devolvió token de autenticación")
+                    return False
+
                 print(f"✅ Login exitoso. Bienvenido {username}!")
                 self.username = username
+                self.token = token
+                self.running = True
+                self.manual_disconnect = False
                 self.connect_websocket()
                 return True
             else:
@@ -63,7 +76,11 @@ class ChatClient:
     def connect_websocket(self):
         """Establece conexión WebSocket"""
         try:
-            ws_url = f"{self.ws_url}?user={self.username}"
+            if not self.token:
+                print("❌ No hay token disponible para conectar WebSocket")
+                return
+
+            ws_url = f"{self.ws_url}?token={self.token}"
             self.ws = websocket.WebSocketApp(
                 ws_url,
                 on_message=self.on_message,
@@ -73,9 +90,15 @@ class ChatClient:
             )
             
             # Iniciar WebSocket en un thread separado
-            ws_thread = threading.Thread(target=self.ws.run_forever)
-            ws_thread.daemon = True
-            ws_thread.start()
+            self.ws_thread = threading.Thread(
+                target=lambda: self.ws.run_forever(
+                    ping_interval=25,
+                    ping_timeout=10,
+                    ping_payload="keepalive"
+                )
+            )
+            self.ws_thread.daemon = True
+            self.ws_thread.start()
             
             # Esperar a que se establezca la conexión
             for _ in range(10):
@@ -89,7 +112,8 @@ class ChatClient:
     def on_open(self, ws):
         """Callback cuando se abre la conexión WebSocket"""
         self.connected = True
-        # El servidor ya identifica al usuario desde ?user=username en la URL
+        self.reconnecting = False
+        print("✅ WebSocket conectado")
     
     def on_message(self, ws, message):
         """Callback cuando llega un mensaje del servidor"""
@@ -134,12 +158,47 @@ class ChatClient:
     
     def on_error(self, ws, error):
         """Callback cuando hay un error"""
-        print(f"❌ Error WebSocket: {error}")
+        if self.running:
+            print(f"⚠️  Error WebSocket: {error}")
     
     def on_close(self, ws, close_status_code, close_msg):
         """Callback cuando se cierra la conexión"""
         self.connected = False
-        print("\n🔌 Conexión WebSocket cerrada")
+        if self.manual_disconnect or not self.running:
+            print("\n🔌 Conexión WebSocket cerrada")
+            return
+
+        print(f"\n🔌 Conexión WebSocket cerrada (código={close_status_code}, motivo={close_msg})")
+        self.start_reconnect_loop()
+
+    def start_reconnect_loop(self):
+        if self.reconnecting or self.manual_disconnect:
+            return
+
+        self.reconnecting = True
+
+        def reconnect():
+            attempt = 0
+            while self.running and not self.connected and not self.manual_disconnect:
+                delay = min(2 ** attempt, 10)
+                print(f"🔄 Reintentando conexión en {delay}s...")
+                time.sleep(delay)
+
+                if not self.running or self.manual_disconnect:
+                    break
+
+                self.connect_websocket()
+
+                if self.connected:
+                    print("✅ Reconexión WebSocket exitosa")
+                    break
+
+                attempt += 1
+
+            self.reconnecting = False
+
+        self.reconnect_thread = threading.Thread(target=reconnect, daemon=True)
+        self.reconnect_thread.start()
     
     def send_action(self, action, params=None):
         """Envía una acción al servidor"""
@@ -292,9 +351,12 @@ class ChatClient:
     
     def disconnect(self):
         """Cierra la conexión"""
+        self.running = False
+        self.manual_disconnect = True
         if self.ws:
             self.ws.close()
         self.connected = False
+        self.token = None
         print("\n👋 Desconectado")
 
 def print_menu():

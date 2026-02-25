@@ -74,8 +74,11 @@ end
 # Application config
 config :chat_app,
   # WebSocket configuration
-  websocket_port: 4000,
+  websocket_port: String.to_integer(System.get_env("WEBSOCKET_PORT", "4000")),
   websocket_host: "127.0.0.1",
+  ws_idle_timeout_ms: 900_000,
+  ws_token_ttl_seconds: 86_400,
+  ws_token_secret: System.get_env("WS_TOKEN_SECRET", "change_me_in_prod"),
 
   # Message history limit
   message_history_limit: 10,

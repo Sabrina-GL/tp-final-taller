@@ -371,4 +371,15 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     state = %{user: "alice"}
     assert {:ok, ^state} = SocketHandler.websocket_handle({:binary, "x"}, state)
   end
+
+  test "websocket_handle returns controlled error for invalid json" do
+    state = %{user: "alice"}
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, "{invalid_json"}, state)
+
+    data = Jason.decode!(reply)
+    assert data["status"] == "error"
+    assert data["error"] == "invalid_json"
+  end
 end

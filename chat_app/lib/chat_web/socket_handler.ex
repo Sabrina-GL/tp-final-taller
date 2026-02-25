@@ -39,9 +39,11 @@ defmodule ChatWeb.SocketHandler do
   end
 
   def websocket_handle({:text, msg}, state) do
-    data = Jason.decode!(msg)
-
-    reply = handle_action(data, state)
+    reply =
+      case Jason.decode(msg) do
+        {:ok, data} -> handle_action(data, state)
+        {:error, _} -> %{status: :error, error: :invalid_json}
+      end
 
     {:reply, {:text, Jason.encode!(reply)}, state}
   end

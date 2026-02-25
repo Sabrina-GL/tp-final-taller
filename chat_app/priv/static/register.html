@@ -50,7 +50,10 @@
             });
 
             if (res.ok) {
-                window.location = "/index?user=" + username;
+                const data = await res.json();
+                sessionStorage.setItem("chat_user", data.user || username);
+                sessionStorage.setItem("chat_token", data.token || "");
+                window.location = "/index";
             } else {
                 alert("Error al registrar el usuario");
             }

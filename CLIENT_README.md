@@ -84,7 +84,12 @@ Al recibir, se muestra nombre, tipo, tamaño y URL de descarga (`/uploads/...`).
 
 ## Protocolo WebSocket (cliente)
 
-Formato general:
+Handshake:
+- Login/registro HTTP devuelve `token`.
+- El cliente abre WebSocket con `/ws?token=<auth_token>`.
+- Keepalive activo (ping/pong) y reconexión automática con aviso en consola.
+
+Formato general de acciones:
 ```json
 {
   "action": "nombre_accion",
@@ -100,7 +105,7 @@ Acciones usadas por el cliente:
 
 ## Troubleshooting
 
-- **No hay conexión WebSocket activa**: verificar backend y login.
+- **No hay conexión WebSocket activa**: verificar backend y login (token válido).
 - **Error de conexión**: confirmar `http://localhost:4000`.
 - **Mensajes no llegan**: verificar `chat_id` con opción `4` y participantes del chat.
 - **Archivo rechazado**: revisar tamaño (<5MB) y tipo MIME permitido.

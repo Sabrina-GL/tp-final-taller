@@ -35,7 +35,7 @@ defmodule ChatApp.Application do
           :ok ->
             IO.puts("\n" <> String.duplicate("=", 50))
             IO.puts("💬 Chat application started on port #{port}")
-            IO.puts("   WebSocket: ws://localhost:#{port}/ws?user=username")
+            IO.puts("   WebSocket: ws://localhost:#{port}/ws?token=<auth_token>")
             IO.puts("   HTTP: http://localhost:#{port}")
             IO.puts(String.duplicate("=", 50) <> "\n")
             {:ok, pid}
