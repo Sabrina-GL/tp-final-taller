@@ -1,24 +1,27 @@
 // contacts.js
 function getContacts() {
-    window.ws.send(JSON.stringify({ action: "get_contacts" }));
+    window.sendWs?.({ action: "get_contacts" }, { silent: true });
 }
 
 function addContact() {
-    if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {
-        alert("WebSocket no está conectado");
+    if (!window.sendWs) {
         return;
     }
 
     const contact = document.getElementById("contact");
     if (!contact.value) {
-        alert("Por favor ingrese un nombre de contacto");
+        window.safeNotify?.("Por favor ingrese un nombre de contacto");
         return;
     }
 
-    window.ws.send(JSON.stringify({
+    const sent = window.sendWs({
         action: "add_contact",
         contact: contact.value
-    }));
+    });
+
+    if (!sent) {
+        return;
+    }
 
     openChatRoom(`${[window.currentUser, contact.value].sort().join(":")}`);
     // Limpio el campo de contacto
@@ -43,17 +46,40 @@ function renderContacts(contacts) {
         li.className = "contact-item";
         li.setAttribute("data-username", username);
 
-        li.innerHTML = `
-        <div class="contact-info">
-            <span class="contact-name">${username}</span>
-            <span class="online-indicator ${isOnline ? 'online' : 'offline'}" 
-                  title="${isOnline ? 'Online' : 'Offline'}">●</span>
-            <div class="contact-actions">
-                <button class="action-btn block-btn" title="Bloquear contacto">🚫</button>
-                <button class="action-btn delete-btn" title="Eliminar contacto">❌</button>
-            </div>
-        </div>
-    `;
+        const info = document.createElement("div");
+        info.className = "contact-info";
+
+        const name = document.createElement("span");
+        name.className = "contact-name";
+        name.textContent = username;
+
+        const indicator = document.createElement("span");
+        indicator.className = `online-indicator ${isOnline ? "online" : "offline"}`;
+        indicator.title = isOnline ? "Online" : "Offline";
+        indicator.textContent = "●";
+
+        const actions = document.createElement("div");
+        actions.className = "contact-actions";
+
+        const blockBtn = document.createElement("button");
+        blockBtn.className = "action-btn block-btn";
+        blockBtn.type = "button";
+        blockBtn.title = "Bloquear contacto";
+        blockBtn.textContent = "🚫";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "action-btn delete-btn";
+        deleteBtn.type = "button";
+        deleteBtn.title = "Eliminar contacto";
+        deleteBtn.textContent = "❌";
+
+        actions.appendChild(blockBtn);
+        actions.appendChild(deleteBtn);
+
+        info.appendChild(name);
+        info.appendChild(indicator);
+        info.appendChild(actions);
+        li.appendChild(info);
 
         // Evento para abrir chat al hacer click en el contacto (excepto en los botones)
         li.addEventListener('click', (e) => {
@@ -63,14 +89,12 @@ function renderContacts(contacts) {
         });
 
         // Evento para bloquear contacto
-        const blockBtn = li.querySelector('.block-btn');
         blockBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             blockContact(username);
         });
 
         // Evento para eliminar contacto
-        const deleteBtn = li.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             deleteContact(username);
@@ -95,31 +119,31 @@ function updateContactStatus(username, isOnline) {
 }
 
 // Funciones para bloquear y eliminar contacto
-function blockContact(username) {
-    if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {
-        alert("WebSocket no está conectado");
+async function blockContact(username) {
+    if (!window.sendWs) {
         return;
     }
 
-    if (confirm(`¿Bloquear a ${username}?`)) {
-        window.ws.send(JSON.stringify({
+    const confirmed = await (window.confirmAction?.(`¿Bloquear a ${username}?`) ?? Promise.resolve(true));
+    if (confirmed) {
+        window.sendWs({
             action: "block_contact",
             contact: username
-        }));
+        });
     }
 }
 
-function deleteContact(username) {
-    if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {
-        alert("WebSocket no está conectado");
+async function deleteContact(username) {
+    if (!window.sendWs) {
         return;
     }
 
-    if (confirm(`¿Eliminar a ${username} de tus contactos?`)) {
-        window.ws.send(JSON.stringify({
+    const confirmed = await (window.confirmAction?.(`¿Eliminar a ${username} de tus contactos?`) ?? Promise.resolve(true));
+    if (confirmed) {
+        window.sendWs({
             action: "delete_contact",
             contact: username
-        }));
+        });
     }
 }
 

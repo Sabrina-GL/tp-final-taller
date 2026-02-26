@@ -29,8 +29,10 @@
 }
 
 .auth-container label {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     color: #555;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .auth-container input {
@@ -40,7 +42,21 @@
     border-radius: 5px;
 }
 
+.auth-container input:focus-visible,
+.auth-container button:focus-visible,
+.auth-footer a:focus-visible {
+    outline: 2px solid #9f94e6;
+    outline-offset: 2px;
+}
+
 .auth-footer {
     text-align: center;
     color: #555;
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        width: calc(100% - 32px);
+        padding: 24px;
+    }
 }

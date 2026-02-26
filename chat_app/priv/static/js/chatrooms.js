@@ -8,13 +8,56 @@ let selectedFile = null;
 function initFileUpload() {
     const attachBtn = document.getElementById('attach-file-btn');
     const fileInput = document.getElementById('file-input');
+    const clearFileBtn = document.getElementById('clear-selected-file-btn');
 
     attachBtn?.addEventListener('click', () => {
         fileInput.click();
     });
     fileInput?.addEventListener('change', (e) => {
-        selectedFile = e.target.files[0];
+        const file = e.target.files?.[0] ?? null;
+        selectedFile = file;
+        updateSelectedFileUI();
     });
+
+    clearFileBtn?.addEventListener('click', () => {
+        clearSelectedFile({ notify: true });
+    });
+}
+
+function updateSelectedFileUI() {
+    const indicator = document.getElementById('selected-file-indicator');
+    const fileLabel = document.getElementById('selected-file-name');
+    const messageInput = document.getElementById('message-input');
+
+    if (!indicator || !fileLabel || !messageInput) return;
+
+    if (!selectedFile) {
+        indicator.classList.add('hidden');
+        fileLabel.textContent = '';
+        messageInput.placeholder = 'Escribí un mensaje...';
+        return;
+    }
+
+    const sizeLabel = formatFileSize(selectedFile.size || 0);
+    fileLabel.textContent = `📎 ${selectedFile.name} (${sizeLabel}) listo para enviar`;
+    messageInput.placeholder = 'Presioná Enter o Enviar para adjuntar';
+    indicator.classList.remove('hidden');
+}
+
+function clearSelectedFile(options = {}) {
+    const { notify = false } = options;
+    selectedFile = null;
+
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+
+    updateSelectedFileUI();
+
+    if (notify) {
+        window.safeNotify?.('Adjunto cancelado');
+    }
 }
 
 function initSearch() {
@@ -31,6 +74,17 @@ function initSearch() {
     nextBtn?.addEventListener('click', nextSearchResult);
 }
 
+function initMessageInput() {
+    const messageInput = document.getElementById('message-input');
+
+    messageInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
 function initGroupModal() {
     groupModal = document.getElementById('group-modal');
     document.querySelector('.close-modal')?.addEventListener('click', closeGroupModal);
@@ -40,11 +94,12 @@ function initGroupModal() {
 
 // ========== Chat Rooms ===========
 
-function getChatRooms() { window.ws.send(JSON.stringify({ action: "get_chatrooms" })); }
+function getChatRooms() { window.sendWs?.({ action: "get_chatrooms" }, { silent: true }); }
 
 function openChatRoom(chat_id) {
     console.log("Abriendo chat room:", chat_id);
     window.currentChatRoom = chat_id;
+    clearSelectedFile();
 
     document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
     document.getElementById("chat-messages").innerHTML = "";
@@ -61,19 +116,16 @@ function renderChatRooms(chatrooms) {
 function addChatRoomToList(chat_id) {
     const list = document.getElementById("chatrooms-list");
     const li = document.createElement("li");
-    li.textContent = chat_id;
+    const isGroup = !chat_id.includes(':');
+    li.textContent = isGroup ? `👥 ${chat_id}` : chat_id;
     li.addEventListener('click', () => openChatRoom(chat_id));
     list.appendChild(li);
-
-    if (!chat_id.includes(':')) {
-        li.innerHTML = '👥 ' + li.textContent;
-    }
 }
 
 // ========== Messages ===========
 
 function getChatRoomMessages(chat_id) {
-    window.ws.send(JSON.stringify({ action: "get_messages", chat_id }));
+    window.sendWs?.({ action: "get_messages", chat_id }, { silent: true });
 }
 
 function renderChatRoomMessages(messages) {
@@ -161,27 +213,32 @@ function renderMessage(message) {
     const deleteBtn = message.from === window.currentUser ?
         '<button class="delete-message-btn" title="Eliminar mensaje">🗑️</button>' : '';
 
+    const safeFrom = window.escapeHtml?.(message.from) ?? "";
+    const safeContent = window.escapeHtml?.(message.msg_content) ?? "";
+    const safeTimestamp = window.escapeHtml?.(formatMessageTimestamp(message.timestamp)) ?? "";
+
     msgDiv.innerHTML = `
         <div class="message-bubble">
-            <div class="message-author">${message.from}</div>
-            <div class="message-content">${message.msg_content}</div>
+            <div class="message-author">${safeFrom}</div>
+            <div class="message-content">${safeContent}</div>
             <div class="message-footer">
                 ${deleteBtn}
-                <div class="message-timestamp">${formatMessageTimestamp(message.timestamp)}</div>
+                <div class="message-timestamp">${safeTimestamp}</div>
             </div>
         </div>
     `;
 
     if (message.from === window.currentUser) {
         const btn = msgDiv.querySelector('.delete-message-btn');
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (confirm('¿Eliminar este mensaje?')) {
-                window.ws.send(JSON.stringify({
+            const confirmed = await (window.confirmAction?.('¿Eliminar este mensaje?') ?? Promise.resolve(true));
+            if (confirmed) {
+                window.sendWs?.({
                     action: "delete_message",
                     message_id: message.id,
                     chat_id: window.currentChatRoom
-                }));
+                });
             }
         });
     }
@@ -197,7 +254,7 @@ function sendMessage() {
     if (selectedFile) return sendFile();
     if (!message || !window.currentChatRoom) return;
 
-    window.ws.send(JSON.stringify({ action: "send_message", chat_id: window.currentChatRoom, msg_content: message }));
+    window.sendWs?.({ action: "send_message", chat_id: window.currentChatRoom, msg_content: message });
     input.value = "";
 }
 
@@ -206,25 +263,37 @@ function sendMessage() {
 function sendFile() {
     if (!selectedFile || !window.currentChatRoom) return;
 
+    const fileToSend = selectedFile;
+
+    const maxFileSizeBytes = 5 * 1024 * 1024;
+    if (fileToSend.size > maxFileSizeBytes) {
+        window.safeNotify?.("El archivo supera el límite de 5MB");
+        clearSelectedFile();
+        return;
+    }
+
+    if (!fileToSend.type) {
+        window.safeNotify?.("No se pudo detectar el tipo de archivo");
+        clearSelectedFile();
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function (e) {
         const base64Content = e.target.result.split(',')[1];
 
-        window.ws.send(JSON.stringify({
+        window.sendWs?.({
             action: "send_file",
             chat_id: window.currentChatRoom,
-            file_name: selectedFile.name,
-            file_type: selectedFile.type,
+            file_name: fileToSend.name,
+            file_type: fileToSend.type,
             file_content: base64Content
-        }));
+        });
 
-        document.getElementById('file-input').value = '';
-        document.getElementById('message-input').placeholder = 'Escribí un mensaje...';
         document.getElementById('message-input').value = '';
-
-        selectedFile = null;
+        clearSelectedFile();
     };
-    reader.readAsDataURL(selectedFile);
+    reader.readAsDataURL(fileToSend);
 }
 
 function renderFileMessage(fileData) {
@@ -238,34 +307,41 @@ function renderFileMessage(fileData) {
     const deleteBtn = fileData.from === window.currentUser ?
         '<button class="delete-message-btn" title="Eliminar mensaje">🗑️</button>' : '';
 
+    const safeFrom = window.escapeHtml?.(fileData.from) ?? "";
+    const safeFileName = window.escapeHtml?.(fileData.file_name) ?? "archivo";
+    const safeFileSize = window.escapeHtml?.(fileSize) ?? "";
+    const safeTimestamp = window.escapeHtml?.(formatMessageTimestamp(fileData.timestamp)) ?? "";
+    const safeDownload = window.escapeHtml?.(`/${fileData.file_path || ""}`) ?? "";
+
     msgDiv.innerHTML = `
         <div class="message-bubble">
-            <div class="message-author">${fileData.from}</div>
+            <div class="message-author">${safeFrom}</div>
             <div class="file-attachment">
                 <span class="file-icon">📄</span>
                 <div class="file-info">
-                    <div class="file-name">${fileData.file_name}</div>
-                    ${fileSize ? `<div class="file-size">${fileSize}</div>` : ''}
+                    <div class="file-name">${safeFileName}</div>
+                    ${fileSize ? `<div class="file-size">${safeFileSize}</div>` : ''}
                 </div>
                 ${fileData.file_path ?
-            `<a href="/${fileData.file_path}" class="download-link" download="${fileData.file_name}">📥</a>` :
+            `<a href="${safeDownload}" class="download-link" download="${safeFileName}">📥</a>` :
             ''}
             </div>
-            <div class="message-timestamp">${formatMessageTimestamp(fileData.timestamp)}</div>
+            <div class="message-timestamp">${safeTimestamp}</div>
             ${deleteBtn}
         </div>
     `;
 
     if (fileData.from === window.currentUser) {
         const btn = msgDiv.querySelector('.delete-message-btn');
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (confirm('¿Eliminar este mensaje?')) {
-                window.ws.send(JSON.stringify({
+            const confirmed = await (window.confirmAction?.('¿Eliminar este mensaje?') ?? Promise.resolve(true));
+            if (confirmed) {
+                window.sendWs?.({
                     action: "delete_message",
                     message_id: fileData.id,
                     chat_id: window.currentChatRoom
-                }));
+                });
             }
         });
     }
@@ -294,7 +370,7 @@ function showCreateGroupModal() {
 }
 
 function closeGroupModal() { groupModal.classList.remove('show'); }
-function loadContactsForModal() { window.ws.send(JSON.stringify({ action: "get_contacts" })); }
+function loadContactsForModal() { window.sendWs?.({ action: "get_contacts" }, { silent: true }); }
 
 function updateContactsModal(contacts) {
     const contactsList = document.getElementById('contacts-list-modal');
@@ -324,14 +400,14 @@ function updateContactsModal(contacts) {
 
 function createGroup() {
     const groupName = document.getElementById('group-name').value.trim();
-    if (!groupName) return alert('Por favor ingresa un nombre para el grupo');
-    if (selectedParticipants.size === 0) return alert('Por favor selecciona al menos un participante');
+    if (!groupName) return window.safeNotify?.('Por favor ingresa un nombre para el grupo');
+    if (selectedParticipants.size === 0) return window.safeNotify?.('Por favor selecciona al menos un participante');
 
-    window.ws.send(JSON.stringify({
+    window.sendWs?.({
         action: "create_group_chat",
         group_name: groupName,
         participants: [window.currentUser, ...Array.from(selectedParticipants)]
-    }));
+    });
 
     closeGroupModal();
 }
@@ -340,14 +416,14 @@ function createGroup() {
 
 function performSearch() {
     const query = document.getElementById('search-input').value.trim();
-    if (!query || !window.currentChatRoom) return alert('Ingresá un término para buscar');
+    if (!query || !window.currentChatRoom) return window.safeNotify?.('Ingresá un término para buscar');
 
     clearHighlights();
-    window.ws.send(JSON.stringify({ action: "search_messages", chat_id: window.currentChatRoom, query: query }));
+    window.sendWs?.({ action: "search_messages", chat_id: window.currentChatRoom, query: query });
 }
 
 function renderSearchResults(messages) {
-    if (!messages || messages.length === 0) return alert('No se encontraron mensajes');
+    if (!messages || messages.length === 0) return window.safeNotify?.('No se encontraron mensajes');
 
     searchResults = messages.slice().reverse();
     currentSearchIndex = searchResults.length - 1; // Empezar por el último
@@ -397,6 +473,7 @@ function prevSearchResult() { goToSearchResult(currentSearchIndex - 1); }
 document.addEventListener('DOMContentLoaded', () => {
     initSearch();
     initFileUpload();
+    initMessageInput();
 });
 
 // Hacer funciones disponibles globalmente

@@ -2,9 +2,7 @@
 window.App = window.App || {};
 
 function loadBlockedContacts() {
-    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-        window.ws.send(JSON.stringify({ action: "get_blocked_contacts" }));
-    }
+    window.sendWs?.({ action: "get_blocked_contacts" }, { silent: true });
 }
 
 function renderBlockedContacts(contacts) {
@@ -28,17 +26,28 @@ function renderBlockedContacts(contacts) {
         li.className = "contact-item";
         li.setAttribute("data-username", username);
 
-        li.innerHTML = `
-            <div class="contact-info">
-                <span class="contact-name">${username}</span>
-                <div class="contact-actions">
-                    <button class="action-btn unblock-btn" title="Desbloquear contacto">🔓</button>
-                </div>
-            </div>
-        `;
+        const info = document.createElement("div");
+        info.className = "contact-info";
+
+        const name = document.createElement("span");
+        name.className = "contact-name";
+        name.textContent = username;
+
+        const actions = document.createElement("div");
+        actions.className = "contact-actions";
+
+        const unblockBtn = document.createElement("button");
+        unblockBtn.className = "action-btn unblock-btn";
+        unblockBtn.type = "button";
+        unblockBtn.title = "Desbloquear contacto";
+        unblockBtn.textContent = "🔓";
+
+        actions.appendChild(unblockBtn);
+        info.appendChild(name);
+        info.appendChild(actions);
+        li.appendChild(info);
 
         // Evento para desbloquear
-        const unblockBtn = li.querySelector('.unblock-btn');
         unblockBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             unblockContact(username);
@@ -48,17 +57,17 @@ function renderBlockedContacts(contacts) {
     });
 }
 
-function unblockContact(username) {
-    if (!window.ws || window.ws.readyState !== WebSocket.OPEN) {
-        alert("WebSocket no está conectado");
+async function unblockContact(username) {
+    if (!window.sendWs) {
         return;
     }
 
-    if (confirm(`¿Desbloquear a ${username}?`)) {
-        window.ws.send(JSON.stringify({
+    const confirmed = await (window.confirmAction?.(`¿Desbloquear a ${username}?`) ?? Promise.resolve(true));
+    if (confirmed) {
+        window.sendWs({
             action: "unblock_contact",
             contact: username
-        }));
+        });
     }
 }
 

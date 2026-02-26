@@ -66,6 +66,11 @@ function clearActiveSection() {
 
 function logout() {
     console.log("Cerrando sesión...");
+    window.wsManualClose = true;
+    if (window.wsReconnectTimer) {
+        clearTimeout(window.wsReconnectTimer);
+        window.wsReconnectTimer = null;
+    }
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
         window.ws.close();
     }

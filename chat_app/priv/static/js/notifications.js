@@ -20,7 +20,10 @@ function renderNotifications(notifications) {
     list.innerHTML = "";
 
     if (!notifications || notifications.length === 0) {
-        list.innerHTML = '<li class="empty-list">No hay notificaciones</li>';
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "empty-list";
+        emptyItem.textContent = "No hay notificaciones";
+        list.appendChild(emptyItem);
         return;
     }
 
@@ -39,10 +42,16 @@ function renderNotifications(notifications) {
             content = `${notif.from} te ha añadido a sus contactos`;
         }
 
-        li.innerHTML = `
-            <div class="notification-content">${content}</div>
-            <div class="notification-time">${new Date(notif.timestamp).toLocaleString()}</div>
-        `;
+        const contentEl = document.createElement("div");
+        contentEl.className = "notification-content";
+        contentEl.textContent = content;
+
+        const timeEl = document.createElement("div");
+        timeEl.className = "notification-time";
+        timeEl.textContent = new Date(notif.timestamp).toLocaleString();
+
+        li.appendChild(contentEl);
+        li.appendChild(timeEl);
 
         li.addEventListener('click', () => {
             if (notif.type === 'new_chatroom' && notif.chat_id) {
