@@ -9,7 +9,7 @@ import json
 import sys
 import requests
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 class ChatClient:
@@ -28,6 +28,41 @@ class ChatClient:
         self.active_chat_id = None
         self.unread_by_chat = defaultdict(int)
         self.state_lock = threading.Lock()
+
+    def format_timestamp(self, raw_timestamp):
+        """Formatea timestamps del servidor de forma robusta."""
+        if raw_timestamp is None:
+            return "--:--:--"
+
+        try:
+            if isinstance(raw_timestamp, (int, float)):
+                seconds = raw_timestamp / 1000 if raw_timestamp > 1e12 else raw_timestamp
+                dt = datetime.fromtimestamp(seconds, tz=timezone.utc)
+                return dt.astimezone().strftime("%H:%M:%S")
+
+            if isinstance(raw_timestamp, str):
+                value = raw_timestamp.strip()
+                if not value:
+                    return "--:--:--"
+
+                if value.isdigit():
+                    numeric = int(value)
+                    seconds = numeric / 1000 if numeric > 1e12 else numeric
+                    dt = datetime.fromtimestamp(seconds, tz=timezone.utc)
+                    return dt.astimezone().strftime("%H:%M:%S")
+
+                if value.endswith("Z"):
+                    value = value[:-1] + "+00:00"
+
+                dt = datetime.fromisoformat(value)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+
+                return dt.astimezone().strftime("%H:%M:%S")
+        except Exception:
+            return "--:--:--"
+
+        return "--:--:--"
         
     def register(self, username, password):
         """Registra un nuevo usuario"""
@@ -136,6 +171,7 @@ class ChatClient:
                 message_data = data.get("message", {})
                 chat_id = data.get('chat_id', 'Desconocido')
                 sender = message_data.get('from', 'Desconocido')
+                message_time = self.format_timestamp(message_data.get("timestamp"))
 
                 with self.state_lock:
                     is_active_chat = self.active_chat_id == chat_id
@@ -146,6 +182,7 @@ class ChatClient:
                 print(f"\n💬 MENSAJE NUEVO:")
                 print(f"   De: {sender}")
                 print(f"   Chat: {chat_id}")
+                print(f"   Hora: {message_time}")
                 
                 # Check if it's a file message
                 if message_data.get('file_name'):
@@ -186,8 +223,20 @@ class ChatClient:
                     print()
                 
             elif data.get("status") == "ok" or data.get("status") == "success":
-                # Respuestas exitosas se manejan en send_action con timeout
-                pass
+                message_data = data.get("message")
+                if isinstance(message_data, dict):
+                    sent_time = self.format_timestamp(message_data.get("timestamp"))
+                    chat_id = message_data.get("chat_id") or self.active_chat_id or "desconocido"
+
+                    if message_data.get("file_name"):
+                        print("\n✅ ARCHIVO ENVIADO")
+                        print(f"   Chat: {chat_id}")
+                        print(f"   Archivo: {message_data.get('file_name')}")
+                        print(f"   Hora: {sent_time}\n")
+                    else:
+                        print("\n✅ MENSAJE ENVIADO")
+                        print(f"   Chat: {chat_id}")
+                        print(f"   Hora: {sent_time}\n")
             elif data.get("status") == "error":
                 print(f"❌ Error del servidor: {data.get('error', 'Error desconocido')}")
                 

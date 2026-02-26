@@ -79,7 +79,75 @@ function getChatRoomMessages(chat_id) {
 function renderChatRoomMessages(messages) {
     const messagesContainer = document.getElementById("chat-messages");
     messagesContainer.innerHTML = "";
-    messages.slice().reverse().forEach(msg => renderMessage(msg));
+    messages
+        .slice()
+        .sort(compareMessagesByChronology)
+        .forEach(msg => renderMessage(msg));
+}
+
+function parseTimestampToDate(rawTimestamp) {
+    if (rawTimestamp === null || rawTimestamp === undefined || rawTimestamp === "") return null;
+
+    if (typeof rawTimestamp === "number") {
+        const millis = rawTimestamp > 1e12 ? rawTimestamp : rawTimestamp * 1000;
+        const date = new Date(millis);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    if (typeof rawTimestamp === "string") {
+        const trimmed = rawTimestamp.trim();
+        if (!trimmed) return null;
+
+        if (/^\d+$/.test(trimmed)) {
+            const num = Number(trimmed);
+            const millis = num > 1e12 ? num : num * 1000;
+            const date = new Date(millis);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const normalized = trimmed.includes("T") && !trimmed.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(trimmed)
+            ? `${trimmed}Z`
+            : trimmed;
+
+        const parsed = new Date(normalized);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+
+        const fallback = new Date(trimmed);
+        return Number.isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    return null;
+}
+
+function formatMessageTimestamp(rawTimestamp) {
+    const date = parseTimestampToDate(rawTimestamp);
+    if (!date) return "--:--:--";
+    return date.toLocaleTimeString();
+}
+
+function compareMessagesByChronology(messageA, messageB) {
+    const dateA = parseTimestampToDate(messageA?.timestamp);
+    const dateB = parseTimestampToDate(messageB?.timestamp);
+
+    if (dateA && dateB) {
+        const timeDiff = dateA.getTime() - dateB.getTime();
+        if (timeDiff !== 0) return timeDiff;
+    } else if (dateA && !dateB) {
+        return -1;
+    } else if (!dateA && dateB) {
+        return 1;
+    }
+
+    const idA = Number(messageA?.id);
+    const idB = Number(messageB?.id);
+
+    if (!Number.isNaN(idA) && !Number.isNaN(idB) && idA !== idB) {
+        return idA - idB;
+    }
+
+    const rawA = String(messageA?.id ?? "");
+    const rawB = String(messageB?.id ?? "");
+    return rawA.localeCompare(rawB);
 }
 
 function renderMessage(message) {
@@ -99,7 +167,7 @@ function renderMessage(message) {
             <div class="message-content">${message.msg_content}</div>
             <div class="message-footer">
                 ${deleteBtn}
-                <div class="message-timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                <div class="message-timestamp">${formatMessageTimestamp(message.timestamp)}</div>
             </div>
         </div>
     `;
@@ -130,7 +198,6 @@ function sendMessage() {
     if (!message || !window.currentChatRoom) return;
 
     window.ws.send(JSON.stringify({ action: "send_message", chat_id: window.currentChatRoom, msg_content: message }));
-    renderMessage({ from: window.currentUser, msg_content: message, timestamp: Date.now() });
     input.value = "";
 }
 
@@ -184,7 +251,7 @@ function renderFileMessage(fileData) {
             `<a href="/${fileData.file_path}" class="download-link" download="${fileData.file_name}">📥</a>` :
             ''}
             </div>
-            <div class="message-timestamp">${new Date(fileData.timestamp).toLocaleTimeString()}</div>
+            <div class="message-timestamp">${formatMessageTimestamp(fileData.timestamp)}</div>
             ${deleteBtn}
         </div>
     `;

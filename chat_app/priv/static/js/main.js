@@ -163,8 +163,12 @@ function connectWebSocket(username, token) {
         }
         else if (msg.type === "contact_status" && msg.username) {
             window.updateContactStatus?.(msg.username, msg.online);
-        } else if (msg.status === "ok" && msg.type === "file") {
-            renderFileMessage(msg.message);
+        } else if (msg.status === "ok" && msg.message) {
+            if (msg.message.file_name || msg.type === "file") {
+                renderFileMessage(msg.message);
+            } else {
+                renderMessage(msg.message);
+            }
         }
         else if (msg.error) {
             alert(`Error: ${msg.error}`);

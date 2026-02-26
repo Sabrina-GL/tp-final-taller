@@ -161,14 +161,6 @@ defmodule ChatApp.ChatRoomServer do
 
     case process_file_upload(file_data, text) do
       {:ok, {file_attrs, message_content}} ->
-        message =
-          %{
-            from: from,
-            msg_content: message_content,
-            timestamp: timestamp
-          }
-          |> Map.merge(file_attrs)
-
         db_attrs =
           %{
             chat_id: state.chat_id,
@@ -180,7 +172,7 @@ defmodule ChatApp.ChatRoomServer do
 
         case Repo.insert(Message.changeset(%Message{}, db_attrs)) do
           {:ok, db_message} ->
-            message_with_id = Map.put(message, :id, db_message.id)
+            message_with_id = message_from_record(db_message)
             new_state = add_message_to_state(message_with_id, state)
 
             notify_participants_new_message(
@@ -284,28 +276,43 @@ defmodule ChatApp.ChatRoomServer do
     |> order_by([m], desc: m.timestamp)
     |> limit(10)
     |> Repo.all()
-    |> Enum.map(fn msg ->
-      base_msg = %{
-        id: msg.id,
-        from: msg.from_user,
-        msg_content: msg.content,
-        timestamp: msg.timestamp
-      }
-
-      # Add file fields if present
-      if msg.file_path do
-        Map.merge(base_msg, %{
-          file_type: msg.file_type,
-          file_name: msg.file_name,
-          file_path: msg.file_path,
-          file_size: msg.file_size
-        })
-      else
-        base_msg
-      end
-    end)
+    |> Enum.map(&message_from_record/1)
     |> Enum.reverse()
   end
+
+  defp message_from_record(msg) do
+    base_msg = %{
+      id: msg.id,
+      from: msg.from_user,
+      msg_content: msg.content,
+      timestamp: serialize_timestamp(msg.timestamp)
+    }
+
+    if msg.file_path do
+      Map.merge(base_msg, %{
+        file_type: msg.file_type,
+        file_name: msg.file_name,
+        file_path: msg.file_path,
+        file_size: msg.file_size
+      })
+    else
+      base_msg
+    end
+  end
+
+  defp serialize_timestamp(%NaiveDateTime{} = timestamp) do
+    timestamp
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  end
+
+  defp serialize_timestamp(%DateTime{} = timestamp) do
+    timestamp
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  end
+
+  defp serialize_timestamp(timestamp), do: timestamp
 
   defp save_uploaded_file(%{base64_content: base64, filename: filename, mime_type: mime_type}) do
     FileManager.save_file(base64, filename, mime_type)

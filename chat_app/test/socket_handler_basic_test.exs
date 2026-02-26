@@ -148,6 +148,28 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert length(data["messages"]) == 1
   end
 
+  test "websocket_handle get_messages returns ISO UTC timestamps" do
+    {:ok, chat_id} = ChatApp.ChatManager.create_private_chat("alice", "bob")
+    ChatApp.ChatRoomServer.add_message(chat_id, "alice", "Primero")
+    ChatApp.ChatRoomServer.add_message(chat_id, "bob", "Segundo")
+
+    state = %{user: "alice"}
+    msg = Jason.encode!(%{"action" => "get_messages", "chat_id" => chat_id})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    assert length(data["messages"]) == 2
+
+    Enum.each(data["messages"], fn message ->
+      assert is_binary(message["timestamp"])
+      assert String.ends_with?(message["timestamp"], "Z")
+
+      assert {:ok, _datetime, 0} = DateTime.from_iso8601(message["timestamp"])
+    end)
+  end
+
   test "websocket_handle create_group_chat returns success" do
     group_name = "team_#{System.unique_integer([:positive])}"
     state = %{user: "alice"}
