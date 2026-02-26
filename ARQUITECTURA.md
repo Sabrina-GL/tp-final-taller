@@ -5,7 +5,7 @@
 - Backend: Elixir + OTP
 - Transporte: WebSocket (Cowboy) + REST mínimo
 - Persistencia: PostgreSQL + Ecto
-- Cache/estado en memoria: ETS + procesos OTP
+- Estado en memoria: procesos OTP + Registros (`Registry`)
 
 ## Componentes principales
 
@@ -22,6 +22,7 @@
 
 ```text
 ChatApp.Application
+├── ChatApp.Repo
 ├── Registry.UsersRegistry
 ├── Registry.ChatRoomsRegistry
 ├── Registry.ActivityRegistry
@@ -32,14 +33,16 @@ ChatApp.Application
 └── Plug.Cowboy (HTTP + WS)
 ```
 
+Nota: en arranque también se ejecutan migraciones automáticas (si están habilitadas en configuración).
+
 ## Flujos clave
 
 ### 1) Registro/Login
 
 1. Cliente llama `POST /api/register` o `POST /api/login`
 2. `Accounts` valida y persiste/consulta usuarios en PostgreSQL
-3. Backend devuelve `auth_token` firmado
-4. Cliente conecta WebSocket con `?token=<auth_token>`
+3. Backend devuelve `token` firmado
+4. Cliente conecta WebSocket con `?token=<token>`
 
 ### 2) Mensaje en tiempo real
 
@@ -50,8 +53,9 @@ ChatApp.Application
 
 ### 3) Notificaciones offline
 
-1. Si receptor está offline, `ActivityServer` encola evento
-2. Al reconectar, el servidor entrega pendientes automáticamente
+1. `Notifications` intenta entregar en vivo por `UsersRegistry`
+2. Si receptor está offline, persiste pendiente en `ActivityServer`
+3. Al reconectar, `SocketHandler` solicita pendientes y los entrega automáticamente
 
 ### 4) Envío de archivos
 
@@ -63,7 +67,7 @@ ChatApp.Application
 ## Decisiones de diseño
 
 - **Proceso por usuario/sala**: simplifica aislamiento de estado y tolerancia a fallos.
-- **Persistencia completa**: evita pérdida de historial tras reinicio.
+- **Persistencia en DB + ventana en memoria**: los mensajes se persisten en PostgreSQL y cada `ChatRoomServer` opera con una ventana reciente (últimos 10) para consultas rápidas.
 - **Base64 en WS para adjuntos**: compatible con cliente consola y web.
 - **Borrado con cleanup físico**: elimina archivo del disco al borrar mensaje.
 
