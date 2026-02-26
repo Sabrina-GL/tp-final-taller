@@ -30,6 +30,24 @@ defmodule ChatWeb.SocketHandlerBasicTest do
     assert data["contacts"] == []
   end
 
+  test "websocket_handle get_contacts oculta presencia cuando existe bloqueo" do
+    assert :ok = ChatApp.Accounts.add_contact("alice", "bob")
+    assert :ok = ChatApp.Accounts.block_contact("bob", "alice")
+    assert :ok = ChatApp.ActivityServer.user_online("bob")
+
+    state = %{user: "alice"}
+    msg = Jason.encode!(%{"action" => "get_contacts"})
+
+    assert {:reply, {:text, reply}, ^state} =
+             SocketHandler.websocket_handle({:text, msg}, state)
+
+    data = Jason.decode!(reply)
+    bob = Enum.find(data["contacts"], fn contact -> contact["username"] == "bob" end)
+
+    assert bob != nil
+    assert bob["online"] == false
+  end
+
   test "websocket_handle get_chatrooms returns empty list" do
     state = %{user: "alice"}
     msg = Jason.encode!(%{"action" => "get_chatrooms"})

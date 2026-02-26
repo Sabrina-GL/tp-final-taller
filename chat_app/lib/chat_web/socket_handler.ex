@@ -102,7 +102,7 @@ defmodule ChatWeb.SocketHandler do
   defp handle_action(%{"action" => "get_contacts"} = _data, state) do
     case Accounts.get_contacts(state.user) do
       {:ok, contacts} ->
-        %{contacts: format_contacts_with_status(contacts)}
+        %{contacts: format_contacts_with_status(state.user, contacts)}
 
       {:error, reason} ->
         %{error: reason}
@@ -130,6 +130,11 @@ defmodule ChatWeb.SocketHandler do
 
   defp handle_action(%{"action" => "get_status"} = data, state) do
     user = data["user"] || state.user
+    blocked = user != state.user and Accounts.interaction_blocked?(state.user, user)
+
+    if blocked do
+      %{user: user, online: false, last_seen: nil}
+    else
     online? = ActivityServer.is_online?(user)
 
     # last_seen returns {:ok, timestamp} or {:error, reason}
@@ -141,6 +146,7 @@ defmodule ChatWeb.SocketHandler do
       end
 
     %{user: user, online: online?, last_seen: last_seen_value}
+    end
   end
 
   defp handle_action(%{"action" => "add_contact"} = data, state) do
@@ -151,7 +157,7 @@ defmodule ChatWeb.SocketHandler do
          chatrooms <- ChatManager.get_user_chatrooms(state.user) do
       %{
         status: :contact_added,
-        contacts: format_contacts_with_status(contacts),
+        contacts: format_contacts_with_status(state.user, contacts),
         chatrooms: chatrooms,
         chat_opened: true,
         chat_id: "#{Enum.sort([state.user, data["contact"]]) |> Enum.join(":")}"
@@ -169,7 +175,7 @@ defmodule ChatWeb.SocketHandler do
             %{
               status: :contact_blocked,
               contact: data["contact"],
-              contacts: format_contacts_with_status(contacts)
+              contacts: format_contacts_with_status(state.user, contacts)
             }
 
           {:error, _} ->
@@ -209,7 +215,7 @@ defmodule ChatWeb.SocketHandler do
             %{
               status: :contact_deleted,
               contact: data["contact"],
-              contacts: format_contacts_with_status(contacts)
+              contacts: format_contacts_with_status(state.user, contacts)
             }
 
           {:error, _} ->
@@ -316,9 +322,15 @@ defmodule ChatWeb.SocketHandler do
     end
   end
 
-  defp format_contacts_with_status(contacts) do
+  defp format_contacts_with_status(requester, contacts) do
     Enum.map(contacts, fn contact ->
-      online = ChatApp.ActivityServer.is_online?(contact)
+      online =
+        if Accounts.interaction_blocked?(requester, contact) do
+          false
+        else
+          ChatApp.ActivityServer.is_online?(contact)
+        end
+
       %{username: contact, online: online}
     end)
   end

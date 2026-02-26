@@ -110,7 +110,10 @@ defmodule ChatApp.ActivityServer do
   defp notify_contacts_online(username, online) do
     case ChatApp.Accounts.get_contacts_who_added_user(username) do
       {:ok, contacts} ->
-        online_contacts = Enum.filter(contacts, &is_online?/1)
+        online_contacts =
+          contacts
+          |> Enum.filter(&is_online?/1)
+          |> Enum.reject(&ChatApp.Accounts.interaction_blocked?(username, &1))
 
         for contact <- online_contacts do
           case Registry.lookup(ChatApp.ActivityRegistry, contact) do
