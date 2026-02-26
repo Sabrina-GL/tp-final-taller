@@ -2,6 +2,7 @@
 let searchResults = [];
 let currentSearchIndex = -1;
 let selectedFile = null;
+let currentBlockTarget = null;
 
 // ========== Initialization ===========
 
@@ -92,6 +93,45 @@ function initGroupModal() {
     window.addEventListener('click', (e) => e.target === groupModal && closeGroupModal());
 }
 
+function initChatHeaderActions() {
+    const blockBtn = document.getElementById('block-chat-user-btn');
+
+    blockBtn?.addEventListener('click', async () => {
+        if (!currentBlockTarget) return;
+
+        const confirmed = await (window.confirmAction?.(`¿Bloquear a ${currentBlockTarget}?`) ?? Promise.resolve(true));
+        if (!confirmed) return;
+
+        const sent = window.sendWs?.({ action: "block_contact", contact: currentBlockTarget });
+        if (sent) {
+            window.safeNotify?.(`${currentBlockTarget} fue bloqueado`);
+        }
+    });
+}
+
+function getPrivateChatPeer(chatId) {
+    if (!chatId || chatId.startsWith('group:')) return null;
+
+    const parts = chatId.split(':');
+    if (parts.length !== 2) return null;
+    if (!parts.includes(window.currentUser)) return null;
+
+    return parts.find((name) => name !== window.currentUser) || null;
+}
+
+function updateChatHeaderActions(chatId) {
+    const actions = document.getElementById('chat-header-actions');
+    if (!actions) return;
+
+    currentBlockTarget = getPrivateChatPeer(chatId);
+
+    if (currentBlockTarget) {
+        actions.classList.remove('hidden');
+    } else {
+        actions.classList.add('hidden');
+    }
+}
+
 // ========== Chat Rooms ===========
 
 function getChatRooms() { window.sendWs?.({ action: "get_chatrooms" }, { silent: true }); }
@@ -100,6 +140,7 @@ function openChatRoom(chat_id) {
     console.log("Abriendo chat room:", chat_id);
     window.currentChatRoom = chat_id;
     clearSelectedFile();
+    updateChatHeaderActions(chat_id);
 
     let title;
     if (chat_id.startsWith("group:")) {
@@ -491,6 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSearch();
     initFileUpload();
     initMessageInput();
+    initChatHeaderActions();
 });
 
 // Hacer funciones disponibles globalmente

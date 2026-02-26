@@ -360,6 +360,26 @@
     align-items: center;
 }
 
+.chat-header-actions {
+    position: absolute;
+    left: 16px;
+    top: 12px;
+}
+
+.chat-header-btn {
+    background-color: #D5CFF6;
+    color: #5A595D;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.chat-header-btn:hover {
+    background-color: #FEECBC;
+}
+
 .chat-search input {
     padding: 5px 10px;
     border: 1px solid #D5CFF6;
