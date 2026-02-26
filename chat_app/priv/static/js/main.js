@@ -211,6 +211,11 @@ function connectWebSocket(username, token) {
         if (msg.status === "message_deleted" && window.currentChatRoom) {
             getChatRoomMessages(window.currentChatRoom);
         }
+        else if (msg.status === "contact_added") {
+            if (msg.contacts) renderContacts(msg.contacts);
+            if (msg.chatrooms) renderChatRooms(msg.chatrooms);
+            if (msg.chat_opened) openChatRoom(msg.chat_id);
+        }
         else if (msg.status === "contact_blocked") {
             if (msg.contacts) {
                 console.log("Cantidad de contactos:", msg.contacts.length);
@@ -234,12 +239,6 @@ function connectWebSocket(username, token) {
         else if (msg.status === "new_message") {
             const messageData = msg.message || {};
             const isActiveChat = window.currentChatRoom === msg.chat_id;
-            const preview = messageData.file_name
-                ? `📎 ${messageData.file_name}`
-                : (messageData.msg_content || "Nuevo mensaje");
-
-            const toastMessage = `💬 ${messageData.from || "Desconocido"}: ${preview}`;
-            (window.showToast || fallbackToast)(toastMessage);
 
             if (isActiveChat) {
                 if (messageData.file_name) {
@@ -248,6 +247,13 @@ function connectWebSocket(username, token) {
                     renderMessage(messageData);
                 }
             } else {
+                const preview = messageData.file_name
+                    ? `📎 ${messageData.file_name}`
+                    : (messageData.msg_content || "Nuevo mensaje");
+
+                const toastMessage = `💬 ${messageData.from || "Desconocido"}: ${preview}`;
+                (window.showToast || fallbackToast)(toastMessage);
+
                 window.upsertLiveNotification?.({
                     type: "new_message",
                     from: messageData.from || "desconocido",
