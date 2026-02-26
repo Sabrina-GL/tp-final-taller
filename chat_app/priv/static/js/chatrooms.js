@@ -101,7 +101,16 @@ function openChatRoom(chat_id) {
     window.currentChatRoom = chat_id;
     clearSelectedFile();
 
-    document.getElementById("chat-title").textContent = `Chatroom: ${chat_id}`;
+    let title;
+    if (chat_id.startsWith("group:")) {
+        title = "Grupo: " + chat_id.slice("group:".length);
+    } else {
+        const users = chat_id.split(":");
+        const otherUser = users.find(u => u !== window.currentUser);
+        title = otherUser || chat_id;
+    }
+
+    document.getElementById("chat-title").textContent = title;
     document.getElementById("chat-messages").innerHTML = "";
     closeSidebar();
     getChatRoomMessages(chat_id);
@@ -116,8 +125,16 @@ function renderChatRooms(chatrooms) {
 function addChatRoomToList(chat_id) {
     const list = document.getElementById("chatrooms-list");
     const li = document.createElement("li");
-    const isGroup = !chat_id.includes(':');
-    li.textContent = isGroup ? `👥 ${chat_id}` : chat_id;
+    let chatTitle;
+    if (chat_id.startsWith("group:")) {
+        chatTitle = "Grupo: " + chat_id.slice("group:".length);
+    } else {
+        const users = chat_id.split(":");
+        const otherUser = users.find(u => u !== window.currentUser);
+        chatTitle = otherUser || chat_id;
+    }
+
+    li.textContent = chatTitle
     li.addEventListener('click', () => openChatRoom(chat_id));
     list.appendChild(li);
 }
