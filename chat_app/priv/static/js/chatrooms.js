@@ -99,12 +99,29 @@ function initChatHeaderActions() {
     blockBtn?.addEventListener('click', async () => {
         if (!currentBlockTarget) return;
 
+        const targetToBlock = currentBlockTarget;
         const confirmed = await (window.confirmAction?.(`¿Bloquear a ${currentBlockTarget}?`) ?? Promise.resolve(true));
         if (!confirmed) return;
 
-        const sent = window.sendWs?.({ action: "block_contact", contact: currentBlockTarget });
+        const sent = window.sendWs?.({ action: "block_contact", contact: targetToBlock });
         if (sent) {
-            window.safeNotify?.(`${currentBlockTarget} fue bloqueado`);
+            window.safeNotify?.(`${targetToBlock} fue bloqueado`);
+
+            if (window.currentChatRoom && getPrivateChatPeer(window.currentChatRoom) === targetToBlock) {
+                window.currentChatRoom = null;
+                clearSelectedFile();
+                updateChatHeaderActions(null);
+
+                const title = document.getElementById('chat-title');
+                const messages = document.getElementById('chat-messages');
+
+                if (title) title.textContent = 'Chat';
+                if (messages) messages.innerHTML = '';
+            }
+
+            window.getContacts?.();
+            window.getChatRooms?.();
+            window.loadBlockedContacts?.();
         }
     });
 }
