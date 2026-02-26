@@ -4,10 +4,7 @@ window.App.notifications = [];
 window.App.unreadCount = 0;
 
 function initNotifications() {
-
-    if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-        window.ws.send(JSON.stringify({ action: "get_notifications" }));
-    }
+    renderNotifications(window.App.notifications || []);
 }
 
 function renderNotifications(notifications) {
@@ -65,6 +62,54 @@ function renderNotifications(notifications) {
     });
 }
 
+function upsertLiveNotification(notif) {
+    if (!notif) return;
+
+    const normalized = {
+        id: notif.id || `live_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: notif.type || "new_message",
+        from: notif.from || "desconocido",
+        chat_id: notif.chat_id || "",
+        timestamp: notif.timestamp || Date.now(),
+        message_preview: notif.message_preview || ""
+    };
+
+    const notifications = window.App.notifications || [];
+    const exists = notifications.some(n => n.id === normalized.id);
+
+    if (!exists) {
+        notifications.unshift(normalized);
+        renderNotifications(notifications);
+    }
+}
+
+function showToast(message) {
+    if (!message) return;
+
+    let container = document.getElementById("toast-container");
+
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add("show");
+    });
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 250);
+    }, 3000);
+}
+
 function removeNotification(id) {
     window.App.notifications = window.App.notifications.filter(n => n.id !== id);
 
@@ -94,3 +139,5 @@ function updateNotificationBadge() {
 window.initNotifications = initNotifications;
 window.renderNotifications = renderNotifications;
 window.removeNotification = removeNotification;
+window.upsertLiveNotification = upsertLiveNotification;
+window.showToast = showToast;

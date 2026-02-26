@@ -113,4 +113,5 @@ Acciones usadas por el cliente:
 ## Notas
 
 - El cliente usa `threading` para recibir notificaciones sin bloquear la interfaz.
+- Los mensajes en chats no abiertos muestran alerta visual (`🔔`) y contador de no leídos por chat/total en el menú.
 - Se puede interrumpir con `Ctrl+C` de forma segura.

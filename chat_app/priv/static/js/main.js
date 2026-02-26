@@ -6,6 +6,30 @@ window.currentUser = null;
 window.currentToken = null;
 window.currentChatRoom = null;
 
+function fallbackToast(message) {
+    if (!message) return;
+
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add("show"));
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 250);
+    }, 3000);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log("DOM cargado");
 
@@ -85,8 +109,33 @@ function connectWebSocket(username, token) {
         else if (msg.status === "chat_opened") {
             openChatRoom(msg.chat_id);
         }
-        else if (msg.status === "new_message" && window.currentChatRoom === msg.chat_id) {
-            renderMessage(msg.message);
+        else if (msg.status === "new_message") {
+            const messageData = msg.message || {};
+            const isActiveChat = window.currentChatRoom === msg.chat_id;
+            const preview = messageData.file_name
+                ? `📎 ${messageData.file_name}`
+                : (messageData.msg_content || "Nuevo mensaje");
+
+            const toastMessage = `💬 ${messageData.from || "Desconocido"}: ${preview}`;
+            (window.showToast || fallbackToast)(toastMessage);
+
+            if (isActiveChat) {
+                if (messageData.file_name) {
+                    renderFileMessage(messageData);
+                } else {
+                    renderMessage(messageData);
+                }
+            } else {
+                window.upsertLiveNotification?.({
+                    type: "new_message",
+                    from: messageData.from || "desconocido",
+                    chat_id: msg.chat_id,
+                    timestamp: messageData.timestamp || Date.now(),
+                    message_preview: messageData.file_name
+                        ? `Archivo: ${messageData.file_name}`
+                        : (messageData.msg_content || "Nuevo mensaje")
+                });
+            }
         } else if (msg.status === "group_chat_created") {
             window.addChatRoomToList(msg.chat_id);
             openChatRoom(msg.chat_id);

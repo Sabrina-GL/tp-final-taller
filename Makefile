@@ -1,4 +1,4 @@
-.PHONY: help dev dev-docker test demo-smoke compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
+.PHONY: help dev dev-docker test demo-smoke compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-refresh-app docker-refresh-app-sudo docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
 
 # Color para output
 CYAN := \033[0;36m
@@ -40,6 +40,8 @@ help:
 	@echo "  make docker-down      Baja servicios de docker-compose"
 	@echo "  make docker-status    Estado de servicios docker-compose"
 	@echo "  make docker-logs      Logs de servicios docker-compose"
+	@echo "  make docker-refresh-app Rebuild/restart solo chat_app (rápido)"
+	@echo "  make docker-refresh-app-sudo Igual que docker-refresh-app usando sudo"
 	@echo "  make docker-reset     Reinicia contenedores y volumenes de compose"
 	@echo "  make docker-up-sudo   Levanta compose usando sudo"
 	@echo "  make docker-status-sudo Estado compose usando sudo"
@@ -232,6 +234,14 @@ docker-logs:
 docker-status:
 	# Muestra estado actual de contenedores de docker-compose.
 	@docker compose ps || sg docker -c "docker compose ps" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-status-sudo$(NC)" && exit 1)
+
+docker-refresh-app:
+	# Rebuild y restart solo del servicio chat_app (sin tocar Postgres/volúmenes).
+	@docker compose up -d --build chat_app || sg docker -c "docker compose up -d --build chat_app" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
+
+docker-refresh-app-sudo:
+	# Rebuild y restart solo del servicio chat_app usando sudo.
+	@sudo docker compose up -d --build chat_app
 
 docker-reset:
 	# Reinicia entorno Docker: baja con volúmenes y vuelve a construir/levantar.

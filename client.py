@@ -10,6 +10,7 @@ import sys
 import requests
 import time
 from datetime import datetime
+from collections import defaultdict
 
 class ChatClient:
     def __init__(self, server_url="http://localhost:4000", ws_url="ws://localhost:4000/ws"):
@@ -24,6 +25,9 @@ class ChatClient:
         self.reconnect_thread = None
         self.reconnecting = False
         self.manual_disconnect = False
+        self.active_chat_id = None
+        self.unread_by_chat = defaultdict(int)
+        self.state_lock = threading.Lock()
         
     def register(self, username, password):
         """Registra un nuevo usuario"""
@@ -130,9 +134,18 @@ class ChatClient:
                 
             elif data.get("type") == "new_message" or data.get("status") == "new_message":
                 message_data = data.get("message", {})
+                chat_id = data.get('chat_id', 'Desconocido')
+                sender = message_data.get('from', 'Desconocido')
+
+                with self.state_lock:
+                    is_active_chat = self.active_chat_id == chat_id
+                    if not is_active_chat:
+                        self.unread_by_chat[chat_id] += 1
+                    unread_total = sum(self.unread_by_chat.values())
+
                 print(f"\n💬 MENSAJE NUEVO:")
-                print(f"   De: {message_data.get('from', 'Desconocido')}")
-                print(f"   Chat: {data.get('chat_id', 'Desconocido')}")
+                print(f"   De: {sender}")
+                print(f"   Chat: {chat_id}")
                 
                 # Check if it's a file message
                 if message_data.get('file_name'):
@@ -143,7 +156,34 @@ class ChatClient:
                         print(f"      URL: http://localhost:4000/{message_data.get('file_path')}")
                 else:
                     print(f"   Contenido: {message_data.get('msg_content', '')}")
+
+                if not is_active_chat:
+                    unread_in_chat = self.unread_by_chat.get(chat_id, 0)
+                    print(f"\n🔔 AVISO: mensaje pendiente en '{chat_id}'")
+                    print(f"   No leídos en ese chat: {unread_in_chat}")
+                    print(f"   No leídos totales: {unread_total}")
+                    print("   Tip: opción 7 para abrir ese chat y limpiar no leídos")
                 print()
+
+            elif data.get("type") == "initial_notifications":
+                notifications = data.get("notifications", [])
+                pending_messages = 0
+
+                with self.state_lock:
+                    for notif in notifications:
+                        if notif.get("type") == "new_message" and notif.get("chat_id"):
+                            chat_id = notif.get("chat_id")
+                            self.unread_by_chat[chat_id] += 1
+                            pending_messages += 1
+
+                    unread_total = sum(self.unread_by_chat.values())
+
+                if pending_messages > 0:
+                    print("\n📥 NOTIFICACIONES PENDIENTES RECIBIDAS")
+                    print(f"   Mensajes pendientes: {pending_messages}")
+                    print(f"   No leídos totales: {unread_total}")
+                    print("   Tip: opción 7 para revisar por chat")
+                    print()
                 
             elif data.get("status") == "ok" or data.get("status") == "success":
                 # Respuestas exitosas se manejan en send_action con timeout
@@ -259,9 +299,18 @@ class ChatClient:
     
     def get_messages(self, room_id):
         """Obtiene los últimos mensajes de un chat"""
+        with self.state_lock:
+            self.active_chat_id = room_id
+            if room_id in self.unread_by_chat:
+                del self.unread_by_chat[room_id]
+
         print(f"\n📬 Obteniendo mensajes de {room_id}...")
         self.send_action("get_messages", {"chat_id": room_id})
         time.sleep(0.5)
+
+    def get_unread_total(self):
+        with self.state_lock:
+            return sum(self.unread_by_chat.values())
     
     def search_messages(self, room_id, query):
         """Busca mensajes por palabra clave en un chat"""
@@ -353,16 +402,21 @@ class ChatClient:
         """Cierra la conexión"""
         self.running = False
         self.manual_disconnect = True
+        with self.state_lock:
+            self.active_chat_id = None
+            self.unread_by_chat.clear()
         if self.ws:
             self.ws.close()
         self.connected = False
         self.token = None
         print("\n👋 Desconectado")
 
-def print_menu():
+def print_menu(unread_total=0):
     """Muestra el menú principal"""
     print("\n" + "="*50)
     print("           MENU PRINCIPAL")
+    if unread_total > 0:
+        print(f"        🔔 No leídos: {unread_total}")
     print("="*50)
     print("1.  Ver contactos")
     print("2.  Agregar contacto")
@@ -418,7 +472,7 @@ def main():
             if client.login(username, password):
                 # Sesión activa
                 while True:
-                    print_menu()
+                    print_menu(client.get_unread_total())
                     menu_opcion = input("\nSeleccione una opción: ").strip()
                     
                     if menu_opcion == "1":
