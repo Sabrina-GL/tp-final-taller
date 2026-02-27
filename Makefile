@@ -1,5 +1,8 @@
 .PHONY: help dev dev-docker test demo-smoke compile deps setup setup-dockerized setup-dockerized-sudo demo db-reset db-clean demo-setup db-backup-docker db-restore-docker db-backup-local db-restore-local db-backup-verify-docker clean mrproper reset-all docker-up docker-down docker-logs docker-status docker-refresh-app docker-refresh-app-sudo docker-reset docker-up-sudo docker-down-sudo docker-status-sudo docker-logs-sudo docker-reset-sudo setup-docker
 
+PORT ?=
+DOCKER_ENV = POSTGRES_HOST_PORT=$(PORT)
+
 # Color para output
 CYAN := \033[0;36m
 GREEN := \033[0;32m
@@ -17,6 +20,7 @@ help:
 	@echo "  make deps             Instala dependencias"
 	@echo "  make setup            Setup rápido (deps + pip + db-reset)"
 	@echo "  make setup-dockerized Setup rápido con Docker (up + status)"
+	@echo "                         (usar PORT=5433 si 5432 está ocupado)"
 	@echo "  make setup-dockerized-sudo Setup Docker usando sudo"
 	@echo "  make demo             Setup demo + pasos siguientes"
 	@echo ""
@@ -40,6 +44,7 @@ help:
 	@echo "  make docker-down      Baja servicios de docker-compose"
 	@echo "  make docker-status    Estado de servicios docker-compose"
 	@echo "  make docker-logs      Logs de servicios docker-compose"
+	@echo "                         (todos aceptan PORT=5433)"
 	@echo "  make docker-refresh-app Rebuild/restart solo chat_app (rápido)"
 	@echo "  make docker-refresh-app-sudo Igual que docker-refresh-app usando sudo"
 	@echo "  make docker-reset     Reinicia contenedores y volumenes de compose"
@@ -78,14 +83,14 @@ setup: deps
 
 setup-dockerized:
 	# Setup rápido usando Docker sin sudo (levanta y muestra estado).
-	@$(MAKE) docker-up
-	@$(MAKE) docker-status
+	@$(MAKE) docker-up PORT=$(PORT)
+	@$(MAKE) docker-status PORT=$(PORT)
 	@echo "$(GREEN)✓ Setup Docker completado$(NC)"
 
 setup-dockerized-sudo:
 	# Setup rápido usando Docker con sudo (levanta y muestra estado).
-	@$(MAKE) docker-up-sudo
-	@$(MAKE) docker-status-sudo
+	@$(MAKE) docker-up-sudo PORT=$(PORT)
+	@$(MAKE) docker-status-sudo PORT=$(PORT)
 	@echo "$(GREEN)✓ Setup Docker completado (sudo)$(NC)"
 
 demo: demo-setup
@@ -221,53 +226,53 @@ reset-all:
 
 docker-up:
 	# Levanta servicios de docker-compose en segundo plano.
-	@docker compose up -d || sg docker -c "docker compose up -d" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make setup-dockerized-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose up -d || sg docker -c "$(DOCKER_ENV) docker compose up -d" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make setup-dockerized-sudo$(NC)" && exit 1)
 
 docker-down:
 	# Baja servicios de docker-compose.
-	@docker compose down || sg docker -c "docker compose down" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-down-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose down || sg docker -c "$(DOCKER_ENV) docker compose down" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-down-sudo$(NC)" && exit 1)
 
 docker-logs:
 	# Muestra logs en vivo de los servicios de docker-compose.
-	@docker compose logs -f || sg docker -c "docker compose logs -f" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-logs-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose logs -f || sg docker -c "$(DOCKER_ENV) docker compose logs -f" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-logs-sudo$(NC)" && exit 1)
 
 docker-status:
 	# Muestra estado actual de contenedores de docker-compose.
-	@docker compose ps || sg docker -c "docker compose ps" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-status-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose ps || sg docker -c "$(DOCKER_ENV) docker compose ps" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-status-sudo$(NC)" && exit 1)
 
 docker-refresh-app:
 	# Rebuild y restart solo del servicio chat_app (sin tocar Postgres/volúmenes).
-	@docker compose up -d --build chat_app || sg docker -c "docker compose up -d --build chat_app" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose up -d --build chat_app || sg docker -c "$(DOCKER_ENV) docker compose up -d --build chat_app" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
 
 docker-refresh-app-sudo:
 	# Rebuild y restart solo del servicio chat_app usando sudo.
-	@sudo docker compose up -d --build chat_app
+	@$(DOCKER_ENV) sudo docker compose up -d --build chat_app
 
 docker-reset:
 	# Reinicia entorno Docker: baja con volúmenes y vuelve a construir/levantar.
-	@docker compose down -v || sg docker -c "docker compose down -v" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
-	@docker compose up -d --build || sg docker -c "docker compose up -d --build" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose down -v || sg docker -c "$(DOCKER_ENV) docker compose down -v" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
+	@$(DOCKER_ENV) docker compose up -d --build || sg docker -c "$(DOCKER_ENV) docker compose up -d --build" || (echo "$(YELLOW)⚠️  Error de permisos en Docker.$(NC)" && echo "$(YELLOW)   Opciones: (1) newgrp docker y reintentar, (2) make docker-reset-sudo$(NC)" && exit 1)
 
 docker-up-sudo:
 	# Levanta servicios de docker-compose usando sudo.
-	@sudo docker compose up -d
+	@$(DOCKER_ENV) sudo docker compose up -d
 
 docker-down-sudo:
 	# Baja servicios de docker-compose usando sudo.
-	@sudo docker compose down
+	@$(DOCKER_ENV) sudo docker compose down
 
 docker-status-sudo:
 	# Muestra estado de docker-compose usando sudo.
-	@sudo docker compose ps
+	@$(DOCKER_ENV) sudo docker compose ps
 
 docker-logs-sudo:
 	# Muestra logs en vivo de docker-compose usando sudo.
-	@sudo docker compose logs -f
+	@$(DOCKER_ENV) sudo docker compose logs -f
 
 docker-reset-sudo:
 	# Reinicia entorno Docker (down -v + up --build) usando sudo.
-	@sudo docker compose down -v
-	@sudo docker compose up -d --build
+	@$(DOCKER_ENV) sudo docker compose down -v
+	@$(DOCKER_ENV) sudo docker compose up -d --build
 
 setup-docker:
 	# Agrega el usuario al grupo docker para evitar usar sudo.

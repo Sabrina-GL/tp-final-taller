@@ -29,7 +29,7 @@ python3 client.py
 
 Si el puerto `5432` ya está ocupado en tu máquina:
 ```bash
-POSTGRES_HOST_PORT=5433 make setup-dockerized
+make setup-dockerized PORT=5433
 ```
 
 Alternativa sin reiniciar sesión:
@@ -40,7 +40,7 @@ make setup-dockerized-sudo
 
 También podés combinarlo con puerto alternativo:
 ```bash
-POSTGRES_HOST_PORT=5433 make setup-dockerized-sudo
+make setup-dockerized-sudo PORT=5433
 ```
 
 ### Opción local (sin Docker)
