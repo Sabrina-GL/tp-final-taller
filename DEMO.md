@@ -20,11 +20,23 @@ make docker-reset
 pip install -r requirements.txt
 ```
 
+Si `5432` está ocupado en la máquina:
+```bash
+POSTGRES_HOST_PORT=5433 make setup-dockerized
+POSTGRES_HOST_PORT=5433 make docker-reset
+```
+
 Alternativa sin relogin:
 ```bash
 make setup-docker
 make setup-dockerized-sudo
 make docker-reset-sudo
+```
+
+Con puerto alternativo:
+```bash
+POSTGRES_HOST_PORT=5433 make setup-dockerized-sudo
+POSTGRES_HOST_PORT=5433 make docker-reset-sudo
 ```
 
 ## Demo principal (cliente consola)
@@ -115,3 +127,4 @@ make db-backup-verify-docker
 - **Sin conexión WebSocket**: verificar `make docker-logs`; el cliente reintenta reconexión automática.
 - **Token inválido/expirado**: reloguear usuario para renovar sesión WebSocket.
 - **Error Docker socket**: usar comandos `-sudo` o `newgrp docker`.
+- **Puerto 5432 ocupado**: levantar con `POSTGRES_HOST_PORT=5433` (o cualquier puerto libre).
