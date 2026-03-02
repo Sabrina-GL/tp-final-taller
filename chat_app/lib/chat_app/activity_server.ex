@@ -20,6 +20,7 @@ defmodule ChatApp.ActivityServer do
     {:via, Registry, {ChatApp.ActivityRegistry, username}}
   end
 
+  @spec user_online(any()) :: any()
   def user_online(username) do
     GenServer.call(via_tuple(username), :user_online)
   end
